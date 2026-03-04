@@ -10,6 +10,11 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import IssuersPage from "./pages/admin/IssuersPage";
+import BadgesPage from "./pages/admin/BadgesPage";
+import AssertionsPage from "./pages/admin/AssertionsPage";
+import LearnersPage from "./pages/admin/LearnersPage";
+import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,22 +30,13 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requireAdmin>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/issuers" element={<ProtectedRoute requireAdmin><IssuersPage /></ProtectedRoute>} />
+            <Route path="/admin/badges" element={<ProtectedRoute requireAdmin><BadgesPage /></ProtectedRoute>} />
+            <Route path="/admin/assertions" element={<ProtectedRoute requireAdmin><AssertionsPage /></ProtectedRoute>} />
+            <Route path="/admin/learners" element={<ProtectedRoute requireAdmin><LearnersPage /></ProtectedRoute>} />
+            <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><AnalyticsPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
