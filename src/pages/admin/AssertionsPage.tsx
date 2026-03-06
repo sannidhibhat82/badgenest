@@ -178,9 +178,9 @@ export default function AssertionsPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No assertions found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No assertions found.</TableCell></TableRow>
               ) : filtered.map((a: any) => {
                 const status = getStatus(a);
                 return (
