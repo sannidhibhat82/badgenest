@@ -65,8 +65,23 @@ export default function BadgeDetailModal({
   const verifyUrl = `${window.location.origin}/verify/${assertion.id}`;
 
   const shareToLinkedIn = () => {
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(verifyUrl)}`;
-    window.open(url, "_blank", "noopener,noreferrer,width=600,height=500");
+    const params = new URLSearchParams({
+      startTask: "CERTIFICATION_NAME",
+      name: assertion.badge_class.name,
+      organizationName: assertion.badge_class.issuer.name,
+      certUrl: verifyUrl,
+      certId: assertion.id,
+    });
+    const issuedDate = new Date(assertion.issued_at);
+    params.set("issueYear", String(issuedDate.getFullYear()));
+    params.set("issueMonth", String(issuedDate.getMonth() + 1));
+    if (assertion.expires_at) {
+      const expDate = new Date(assertion.expires_at);
+      params.set("expirationYear", String(expDate.getFullYear()));
+      params.set("expirationMonth", String(expDate.getMonth() + 1));
+    }
+    const url = `https://www.linkedin.com/profile/add?${params.toString()}`;
+    window.open(url, "_blank", "noopener,noreferrer,width=600,height=700");
   };
 
   const shareToTwitter = () => {
