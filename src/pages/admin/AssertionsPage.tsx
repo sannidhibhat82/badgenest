@@ -185,7 +185,8 @@ export default function AssertionsPage() {
                 const status = getStatus(a);
                 return (
                   <TableRow key={a.id}>
-                    <TableCell className="font-medium">{(a as any).profiles?.full_name || a.recipient_id.slice(0, 8)}</TableCell>
+                    <TableCell className="font-medium">{a.profile?.full_name || a.recipient_id.slice(0, 8)}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{a.profile?.email || "—"}</TableCell>
                     <TableCell>{a.badge_classes?.name ?? "—"}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{format(new Date(a.issued_at), "MMM d, yyyy")}</TableCell>
                     <TableCell><Badge variant={status.variant}><status.icon className="mr-1 h-3 w-3" />{status.label}</Badge></TableCell>
