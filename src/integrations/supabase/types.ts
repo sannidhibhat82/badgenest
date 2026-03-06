@@ -138,10 +138,47 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_tags: {
+        Row: {
+          created_at: string
+          id: string
+          profile_user_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_user_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_user_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_tags_profile_user_id_fkey"
+            columns: ["profile_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "profile_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
           updated_at: string
@@ -150,6 +187,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           updated_at?: string
@@ -158,10 +196,32 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
