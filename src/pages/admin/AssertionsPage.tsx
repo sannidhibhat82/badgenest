@@ -29,18 +29,22 @@ export default function AssertionsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("assertions")
-        .select("*, badge_classes(name, image_url, expiry_days), profiles!assertions_recipient_id_fkey(full_name)")
+        .select("*, badge_classes(name, image_url, expiry_days)")
         .order("issued_at", { ascending: false });
-      if (error) {
-        // fallback without FK alias
-        const { data: d2, error: e2 } = await supabase
-          .from("assertions")
-          .select("*, badge_classes(name, image_url, expiry_days)")
-          .order("issued_at", { ascending: false });
-        if (e2) throw e2;
-        return d2 ?? [];
-      }
-      return data ?? [];
+      if (error) throw error;
+
+      // Fetch profiles to get names and emails
+      const recipientIds = [...new Set((data ?? []).map((a) => a.recipient_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", recipientIds);
+      const profileMap = Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p]));
+
+      return (data ?? []).map((a) => ({
+        ...a,
+        profile: profileMap[a.recipient_id] ?? null,
+      }));
     },
   });
 
@@ -165,6 +169,7 @@ export default function AssertionsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Learner</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Badge</TableHead>
                 <TableHead className="hidden md:table-cell">Issued</TableHead>
                 <TableHead>Status</TableHead>
@@ -173,14 +178,15 @@ export default function AssertionsPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No assertions found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No assertions found.</TableCell></TableRow>
               ) : filtered.map((a: any) => {
                 const status = getStatus(a);
                 return (
                   <TableRow key={a.id}>
-                    <TableCell className="font-medium">{(a as any).profiles?.full_name || a.recipient_id.slice(0, 8)}</TableCell>
+                    <TableCell className="font-medium">{a.profile?.full_name || a.recipient_id.slice(0, 8)}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{a.profile?.email || "—"}</TableCell>
                     <TableCell>{a.badge_classes?.name ?? "—"}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{format(new Date(a.issued_at), "MMM d, yyyy")}</TableCell>
                     <TableCell><Badge variant={status.variant}><status.icon className="mr-1 h-3 w-3" />{status.label}</Badge></TableCell>
