@@ -169,6 +169,7 @@ export default function AssertionsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Learner</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Badge</TableHead>
                 <TableHead className="hidden md:table-cell">Issued</TableHead>
                 <TableHead>Status</TableHead>
