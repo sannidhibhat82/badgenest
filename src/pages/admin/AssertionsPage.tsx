@@ -29,18 +29,22 @@ export default function AssertionsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("assertions")
-        .select("*, badge_classes(name, image_url, expiry_days), profiles!assertions_recipient_id_fkey(full_name)")
+        .select("*, badge_classes(name, image_url, expiry_days)")
         .order("issued_at", { ascending: false });
-      if (error) {
-        // fallback without FK alias
-        const { data: d2, error: e2 } = await supabase
-          .from("assertions")
-          .select("*, badge_classes(name, image_url, expiry_days)")
-          .order("issued_at", { ascending: false });
-        if (e2) throw e2;
-        return d2 ?? [];
-      }
-      return data ?? [];
+      if (error) throw error;
+
+      // Fetch profiles to get names and emails
+      const recipientIds = [...new Set((data ?? []).map((a) => a.recipient_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .in("user_id", recipientIds);
+      const profileMap = Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p]));
+
+      return (data ?? []).map((a) => ({
+        ...a,
+        profile: profileMap[a.recipient_id] ?? null,
+      }));
     },
   });
 
