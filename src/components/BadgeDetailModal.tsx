@@ -81,7 +81,7 @@ export default function BadgeDetailModal({
       params.set("expirationMonth", String(expDate.getMonth() + 1));
     }
     const url = `https://www.linkedin.com/profile/add?${params.toString()}`;
-    window.open(url, "_blank", "noopener,noreferrer,width=600,height=700");
+    window.open(url, "_blank");
   };
 
   const shareToTwitter = () => {
