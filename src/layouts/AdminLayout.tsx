@@ -1,10 +1,11 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LayoutDashboard, Award, Building2, Users, BarChart3, LogOut, Settings, Shield } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { LayoutDashboard, Award, Building2, Users, BarChart3, LogOut, Settings, Shield, Menu } from "lucide-react";
 import evolveLogo from "@/assets/evolve-logo.png";
 import { cn } from "@/lib/utils";
 
@@ -17,39 +18,49 @@ const adminNav = [
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
 ];
 
+function NavItems({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  return (
+    <>
+      {adminNav.map((item) => {
+        const active = pathname === item.href;
+        return (
+          <Link
+            key={item.href}
+            to={item.href}
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              active
+                ? "bg-sidebar-accent text-sidebar-primary"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            )}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </Link>
+        );
+      })}
+    </>
+  );
+}
+
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();
   const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase()
     : "A";
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
+      {/* Desktop Sidebar */}
       <aside className="hidden w-64 flex-col border-r bg-sidebar text-sidebar-foreground lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
           <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto brightness-0 invert" />
         </div>
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {adminNav.map((item) => {
-            const active = location.pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-primary"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
+          <NavItems pathname={location.pathname} />
         </nav>
         <div className="border-t border-sidebar-border p-4">
           <div className="flex items-center gap-3">
@@ -66,9 +77,24 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <div className="flex flex-1 flex-col">
         <header className="flex h-16 items-center justify-between border-b px-6">
           <div className="flex items-center gap-2 lg:hidden">
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 bg-sidebar text-sidebar-foreground p-0">
+                <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
+                  <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto brightness-0 invert" />
+                </div>
+                <nav className="flex-1 space-y-1 px-3 py-4">
+                  <NavItems pathname={location.pathname} onNavigate={() => setMobileOpen(false)} />
+                </nav>
+              </SheetContent>
+            </Sheet>
             <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto" />
           </div>
-          <div className="lg:hidden" />
+          <div className="hidden lg:block" />
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
