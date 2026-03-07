@@ -12,7 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Search, Tag, Plus, X, Download } from "lucide-react";
+import { Search, Tag, Plus, X, Download, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 20;
 
 export default function LearnersPage() {
   const qc = useQueryClient();
@@ -24,8 +26,8 @@ export default function LearnersPage() {
   const [assignOpen, setAssignOpen] = useState(false);
   const [assignUserId, setAssignUserId] = useState("");
   const [assignTagId, setAssignTagId] = useState("");
+  const [page, setPage] = useState(0);
 
-  // Fetch tags
   const { data: tags = [] } = useQuery({
     queryKey: ["tags"],
     queryFn: async () => {
@@ -35,7 +37,6 @@ export default function LearnersPage() {
     },
   });
 
-  // Fetch profile_tags
   const { data: profileTags = [] } = useQuery({
     queryKey: ["profile_tags"],
     queryFn: async () => {
@@ -70,7 +71,6 @@ export default function LearnersPage() {
     },
   });
 
-  // Build tag map per user
   const userTagMap = new Map<string, { id: string; name: string; color: string }[]>();
   for (const pt of profileTags) {
     const tag = tags.find((t) => t.id === pt.tag_id);
@@ -80,7 +80,6 @@ export default function LearnersPage() {
     userTagMap.set(pt.profile_user_id, list);
   }
 
-  // Create tag
   const createTag = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("tags").insert({ name: newTagName.trim(), color: newTagColor });
@@ -90,7 +89,6 @@ export default function LearnersPage() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // Assign tag
   const assignTag = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("profile_tags").insert({ profile_user_id: assignUserId, tag_id: assignTagId });
@@ -100,7 +98,6 @@ export default function LearnersPage() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // Remove tag
   const removeTag = useMutation({
     mutationFn: async ({ userId, tagId }: { userId: string; tagId: string }) => {
       const { error } = await supabase.from("profile_tags").delete().eq("profile_user_id", userId).eq("tag_id", tagId);
@@ -110,7 +107,6 @@ export default function LearnersPage() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // Filter
   const filtered = learners.filter((l) => {
     if (search && !l.full_name?.toLowerCase().includes(search.toLowerCase()) && !l.email?.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterTag !== "all") {
@@ -120,7 +116,9 @@ export default function LearnersPage() {
     return true;
   });
 
-  // Export CSV
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   const exportCsv = () => {
     const rows = [["Name", "Email", "Tags", "Total Badges", "Active", "Revoked"]];
     for (const l of filtered) {
@@ -165,9 +163,9 @@ export default function LearnersPage() {
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name or email…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Search by name or email…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} className="pl-9" />
         </div>
-        <Select value={filterTag} onValueChange={setFilterTag}>
+        <Select value={filterTag} onValueChange={(v) => { setFilterTag(v); setPage(0); }}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by tag" />
           </SelectTrigger>
@@ -202,9 +200,9 @@ export default function LearnersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
-              ) : filtered.length === 0 ? (
+              ) : paginated.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No learners found.</TableCell></TableRow>
-              ) : filtered.map((l) => {
+              ) : paginated.map((l) => {
                 const initials = l.full_name ? l.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "?";
                 const ut = userTagMap.get(l.user_id) ?? [];
                 return (
@@ -253,6 +251,21 @@ export default function LearnersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">{filtered.length} learner(s) — Page {page + 1} of {totalPages}</p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
+              <ChevronLeft className="mr-1 h-4 w-4" />Previous
+            </Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>
+              Next<ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Create Tag Dialog */}
       <Dialog open={tagDialogOpen} onOpenChange={setTagDialogOpen}>

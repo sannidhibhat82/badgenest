@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Award } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
@@ -34,6 +35,20 @@ export default function BadgesPage() {
       const { data, error } = await supabase.from("badge_classes").select("*, issuers(name)").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Fetch issuance counts
+  const { data: issuanceCounts = {} } = useQuery({
+    queryKey: ["badge-issuance-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("assertions").select("badge_class_id");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const a of data ?? []) {
+        counts[a.badge_class_id] = (counts[a.badge_class_id] || 0) + 1;
+      }
+      return counts;
     },
   });
 
@@ -112,20 +127,24 @@ export default function BadgesPage() {
                 <TableHead>Name</TableHead>
                 <TableHead className="hidden md:table-cell">Issuer</TableHead>
                 <TableHead className="hidden md:table-cell">Expiry</TableHead>
+                <TableHead>Issued</TableHead>
                 <TableHead className="w-24">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
               ) : badges.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No badges yet.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No badges yet.</TableCell></TableRow>
               ) : badges.map((b: any) => (
                 <TableRow key={b.id}>
                   <TableCell>{b.image_url ? <img src={b.image_url} alt="" className="h-10 w-10 rounded object-contain" /> : <Award className="h-10 w-10 text-muted-foreground" />}</TableCell>
                   <TableCell className="font-medium">{b.name}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{b.issuers?.name ?? "—"}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{b.expiry_days ? `${b.expiry_days} days` : "Never"}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-xs">{issuanceCounts[b.id] || 0}</Badge>
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" onClick={() => openEdit(b)}><Pencil className="h-4 w-4" /></Button>

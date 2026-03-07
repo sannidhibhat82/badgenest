@@ -5,24 +5,37 @@ import AdminLayout from "@/layouts/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Upload, ShieldCheck, ShieldX, ShieldAlert } from "lucide-react";
+import { Plus, Upload, ShieldCheck, ShieldX, ShieldAlert, Search, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
+
+const PAGE_SIZE = 20;
 
 export default function AssertionsPage() {
   const qc = useQueryClient();
   const [issueOpen, setIssueOpen] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
-  const [form, setForm] = useState({ recipient_id: "", badge_class_id: "", evidence_url: "" });
+  const [form, setForm] = useState({ recipient_id: "", badge_class_id: "", evidence_url: "", email: "" });
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvBadgeId, setCsvBadgeId] = useState("");
   const [filterBadge, setFilterBadge] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [issueMode, setIssueMode] = useState<"select" | "email">("select");
+
+  // Revocation
+  const [revokeTarget, setRevokeTarget] = useState<{ id: string; currentRevoked: boolean } | null>(null);
+  const [revokeReason, setRevokeReason] = useState("");
+
+  // Delete
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: assertions = [], isLoading } = useQuery({
     queryKey: ["assertions"],
@@ -33,7 +46,6 @@ export default function AssertionsPage() {
         .order("issued_at", { ascending: false });
       if (error) throw error;
 
-      // Fetch profiles to get names and emails
       const recipientIds = [...new Set((data ?? []).map((a) => a.recipient_id))];
       const { data: profiles } = await supabase
         .from("profiles")
@@ -60,16 +72,31 @@ export default function AssertionsPage() {
   const { data: learners = [] } = useQuery({
     queryKey: ["learners"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
+      const { data, error } = await supabase.from("profiles").select("user_id, full_name, email").order("full_name");
       if (error) throw error;
       return data;
     },
   });
 
+  // Issue mutation with email support
   const issueMutation = useMutation({
     mutationFn: async () => {
+      let recipientId = form.recipient_id;
+
+      if (issueMode === "email" && form.email) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("email", form.email.trim().toLowerCase())
+          .maybeSingle();
+        if (!profile) throw new Error(`No learner found with email: ${form.email}`);
+        recipientId = profile.user_id;
+      }
+
+      if (!recipientId) throw new Error("Please select a learner or enter an email");
+
       const { error } = await supabase.from("assertions").insert({
-        recipient_id: form.recipient_id,
+        recipient_id: recipientId,
         badge_class_id: form.badge_class_id,
         evidence_url: form.evidence_url || null,
       });
@@ -79,12 +106,12 @@ export default function AssertionsPage() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  // CSV with email support
   const csvMutation = useMutation({
     mutationFn: async () => {
       if (!csvFile || !csvBadgeId) throw new Error("Select a badge and CSV file");
       const text = await csvFile.text();
       const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-      // Expect header: email (or user_id), evidence_url (optional)
       const header = lines[0].toLowerCase().split(",");
       const emailIdx = header.indexOf("email");
       const uidIdx = header.indexOf("user_id");
@@ -94,16 +121,25 @@ export default function AssertionsPage() {
 
       const rows = lines.slice(1);
       let inserted = 0;
+      const errors: string[] = [];
 
       for (const row of rows) {
         const cols = row.split(",").map((c) => c.trim());
         let recipientId = uidIdx !== -1 ? cols[uidIdx] : null;
 
         if (!recipientId && emailIdx !== -1) {
-          // Look up user by email in profiles — but we don't store email there.
-          // We'll match by searching auth metadata isn't accessible, so require user_id.
-          // Actually let's look up by profile full_name or skip. Better: require user_id.
-          throw new Error("CSV with 'email' column is not yet supported. Please use 'user_id' column.");
+          const email = cols[emailIdx]?.toLowerCase();
+          if (!email) continue;
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .eq("email", email)
+            .maybeSingle();
+          if (!profile) {
+            errors.push(email);
+            continue;
+          }
+          recipientId = profile.user_id;
         }
 
         if (!recipientId) continue;
@@ -117,18 +153,35 @@ export default function AssertionsPage() {
         if (!error) inserted++;
       }
 
+      if (errors.length > 0) {
+        toast({ title: "Some emails not found", description: errors.join(", "), variant: "destructive" });
+      }
       return inserted;
     },
     onSuccess: (count) => { qc.invalidateQueries({ queryKey: ["assertions"] }); setCsvOpen(false); toast({ title: `${count} badge(s) issued via CSV` }); },
     onError: (e: Error) => toast({ title: "CSV Error", description: e.message, variant: "destructive" }),
   });
 
+  // Revoke with reason
   const toggleRevoke = useMutation({
-    mutationFn: async ({ id, revoked }: { id: string; revoked: boolean }) => {
-      const { error } = await supabase.from("assertions").update({ revoked, revocation_reason: revoked ? "Revoked by admin" : null }).eq("id", id);
+    mutationFn: async ({ id, revoked, reason }: { id: string; revoked: boolean; reason: string }) => {
+      const { error } = await supabase.from("assertions").update({
+        revoked,
+        revocation_reason: revoked ? (reason || "Revoked by admin") : null,
+      }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["assertions"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["assertions"] }); setRevokeTarget(null); setRevokeReason(""); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // Delete
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("assertions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["assertions"] }); setDeleteId(null); toast({ title: "Assertion deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
@@ -138,7 +191,21 @@ export default function AssertionsPage() {
     return { label: "Valid", variant: "default" as const, icon: ShieldCheck };
   };
 
-  const filtered = filterBadge === "all" ? assertions : assertions.filter((a: any) => a.badge_class_id === filterBadge);
+  // Filter + search
+  const filtered = assertions.filter((a: any) => {
+    if (filterBadge !== "all" && a.badge_class_id !== filterBadge) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const name = a.profile?.full_name?.toLowerCase() || "";
+      const email = a.profile?.email?.toLowerCase() || "";
+      const badge = a.badge_classes?.name?.toLowerCase() || "";
+      if (!name.includes(q) && !email.includes(q) && !badge.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <AdminLayout>
@@ -149,12 +216,16 @@ export default function AssertionsPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setCsvOpen(true)}><Upload className="mr-2 h-4 w-4" />CSV Import</Button>
-          <Button onClick={() => { setForm({ recipient_id: "", badge_class_id: "", evidence_url: "" }); setIssueOpen(true); }}><Plus className="mr-2 h-4 w-4" />Issue Badge</Button>
+          <Button onClick={() => { setForm({ recipient_id: "", badge_class_id: "", evidence_url: "", email: "" }); setIssueMode("select"); setIssueOpen(true); }}><Plus className="mr-2 h-4 w-4" />Issue Badge</Button>
         </div>
       </div>
 
-      <div className="mt-4">
-        <Select value={filterBadge} onValueChange={setFilterBadge}>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search by name, email, or badge…" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }} className="pl-9" />
+        </div>
+        <Select value={filterBadge} onValueChange={(v) => { setFilterBadge(v); setPage(0); }}>
           <SelectTrigger className="w-64"><SelectValue placeholder="Filter by badge" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Badges</SelectItem>
@@ -173,15 +244,15 @@ export default function AssertionsPage() {
                 <TableHead>Badge</TableHead>
                 <TableHead className="hidden md:table-cell">Issued</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-24">Revoked</TableHead>
+                <TableHead className="w-32">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
-              ) : filtered.length === 0 ? (
+              ) : paginated.length === 0 ? (
                 <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No assertions found.</TableCell></TableRow>
-              ) : filtered.map((a: any) => {
+              ) : paginated.map((a: any) => {
                 const status = getStatus(a);
                 return (
                   <TableRow key={a.id}>
@@ -191,7 +262,26 @@ export default function AssertionsPage() {
                     <TableCell className="hidden md:table-cell text-muted-foreground">{format(new Date(a.issued_at), "MMM d, yyyy")}</TableCell>
                     <TableCell><Badge variant={status.variant}><status.icon className="mr-1 h-3 w-3" />{status.label}</Badge></TableCell>
                     <TableCell>
-                      <Switch checked={a.revoked} onCheckedChange={(v) => toggleRevoke.mutate({ id: a.id, revoked: v })} />
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={a.revoked ? "text-success" : "text-destructive"}
+                          onClick={() => {
+                            if (a.revoked) {
+                              toggleRevoke.mutate({ id: a.id, revoked: false, reason: "" });
+                            } else {
+                              setRevokeTarget({ id: a.id, currentRevoked: false });
+                              setRevokeReason("");
+                            }
+                          }}
+                        >
+                          {a.revoked ? "Restore" : "Revoke"}
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(a.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -201,18 +291,80 @@ export default function AssertionsPage() {
         </CardContent>
       </Card>
 
-      {/* Issue single */}
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">{filtered.length} result(s) — Page {page + 1} of {totalPages}</p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
+              <ChevronLeft className="mr-1 h-4 w-4" />Previous
+            </Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>
+              Next<ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Revoke Confirmation */}
+      <Dialog open={!!revokeTarget} onOpenChange={() => setRevokeTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Revoke Badge</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to revoke this badge? This action can be undone later.</p>
+          <div>
+            <Label>Reason for revocation *</Label>
+            <Textarea value={revokeReason} onChange={(e) => setRevokeReason(e.target.value)} placeholder="e.g. Fraudulent submission, policy violation…" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRevokeTarget(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={!revokeReason.trim() || toggleRevoke.isPending}
+              onClick={() => revokeTarget && toggleRevoke.mutate({ id: revokeTarget.id, revoked: true, reason: revokeReason })}
+            >
+              {toggleRevoke.isPending ? "Revoking…" : "Revoke"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Assertion?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently remove this assertion. This cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Issue Badge */}
       <Dialog open={issueOpen} onOpenChange={setIssueOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Issue Badge</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); issueMutation.mutate(); }} className="space-y-4">
-            <div>
-              <Label>Learner *</Label>
-              <Select value={form.recipient_id} onValueChange={(v) => setForm({ ...form, recipient_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Select learner" /></SelectTrigger>
-                <SelectContent>{learners.map((l) => <SelectItem key={l.user_id} value={l.user_id}>{l.full_name || l.user_id.slice(0, 8)}</SelectItem>)}</SelectContent>
-              </Select>
+            <div className="flex gap-2">
+              <Button type="button" variant={issueMode === "select" ? "default" : "outline"} size="sm" onClick={() => setIssueMode("select")}>Select Learner</Button>
+              <Button type="button" variant={issueMode === "email" ? "default" : "outline"} size="sm" onClick={() => setIssueMode("email")}>By Email</Button>
             </div>
+            {issueMode === "select" ? (
+              <div>
+                <Label>Learner *</Label>
+                <Select value={form.recipient_id} onValueChange={(v) => setForm({ ...form, recipient_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select learner" /></SelectTrigger>
+                  <SelectContent>{learners.map((l) => <SelectItem key={l.user_id} value={l.user_id}>{l.full_name || l.email || l.user_id.slice(0, 8)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div>
+                <Label>Learner Email *</Label>
+                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="learner@example.com" />
+              </div>
+            )}
             <div>
               <Label>Badge *</Label>
               <Select value={form.badge_class_id} onValueChange={(v) => setForm({ ...form, badge_class_id: v })}>
@@ -221,7 +373,11 @@ export default function AssertionsPage() {
               </Select>
             </div>
             <div><Label>Evidence URL</Label><Input value={form.evidence_url} onChange={(e) => setForm({ ...form, evidence_url: e.target.value })} placeholder="https://…" /></div>
-            <DialogFooter><Button type="submit" disabled={issueMutation.isPending || !form.recipient_id || !form.badge_class_id}>{issueMutation.isPending ? "Issuing…" : "Issue"}</Button></DialogFooter>
+            <DialogFooter>
+              <Button type="submit" disabled={issueMutation.isPending || !form.badge_class_id || (issueMode === "select" ? !form.recipient_id : !form.email)}>
+                {issueMutation.isPending ? "Issuing…" : "Issue"}
+              </Button>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -241,7 +397,7 @@ export default function AssertionsPage() {
             <div>
               <Label>CSV File *</Label>
               <Input type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)} />
-              <p className="mt-1 text-xs text-muted-foreground">Columns: user_id, evidence_url (optional)</p>
+              <p className="mt-1 text-xs text-muted-foreground">Columns: email (or user_id), evidence_url (optional)</p>
             </div>
             <DialogFooter><Button type="submit" disabled={csvMutation.isPending || !csvBadgeId || !csvFile}>{csvMutation.isPending ? "Importing…" : "Import"}</Button></DialogFooter>
           </form>
