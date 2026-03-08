@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import LandingPage from "./LandingPage";
 
 export default function Index() {
   const { user, loading, isAdmin } = useAuth();
@@ -12,7 +13,7 @@ export default function Index() {
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <LandingPage />;
   if (isAdmin) return <Navigate to="/admin" replace />;
   return <Navigate to="/dashboard" replace />;
 }
