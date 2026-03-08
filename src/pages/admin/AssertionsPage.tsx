@@ -160,7 +160,13 @@ export default function AssertionsPage() {
           badge_class_id: csvBadgeId,
           evidence_url: evidence,
         });
-        if (!error) inserted++;
+        if (!error) {
+          inserted++;
+          const badgeName = badges.find((b) => b.id === csvBadgeId)?.name || "Badge";
+          supabase.functions.invoke("send-badge-notification", {
+            body: { recipientId, badgeName, evidenceUrl: evidence },
+          }).catch(console.error);
+        }
       }
 
       if (errors.length > 0) {
