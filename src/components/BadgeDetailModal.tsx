@@ -251,7 +251,7 @@ export default function BadgeDetailModal({
               <Share2 className="mr-1.5 inline h-3.5 w-3.5" />
               Share & Add to Profile
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 min-w-0">
               <Button
                 variant="outline"
                 size="sm"
