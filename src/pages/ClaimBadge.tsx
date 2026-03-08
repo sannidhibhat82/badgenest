@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Award, CheckCircle, Gift, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 
 export default function ClaimBadge() {
   const { token } = useParams<{ token: string }>();
