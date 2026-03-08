@@ -37,7 +37,7 @@ export default function Login() {
         <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full bg-primary-foreground/5 blur-3xl" />
         <div className="absolute bottom-1/4 right-10 w-72 h-72 rounded-full bg-primary-foreground/10 blur-3xl" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
-          <img src={badgenestLogo} alt="BadgeNest" className="h-10 w-auto" />
+          <img src={badgenestLogo} alt="BadgeNest" className="h-14 w-auto object-contain drop-shadow-lg" />
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary-foreground/10 px-4 py-2 text-sm font-medium backdrop-blur-sm">
               <Award className="h-4 w-4" />
