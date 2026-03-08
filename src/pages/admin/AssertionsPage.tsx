@@ -70,7 +70,7 @@ export default function AssertionsPage() {
   const { data: badges = [] } = useQuery({
     queryKey: ["badge_classes"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("badge_classes").select("id, name").order("name");
+      const { data, error } = await supabase.from("badge_classes").select("id, name, expiry_days").order("name");
       if (error) throw error;
       return data;
     },
