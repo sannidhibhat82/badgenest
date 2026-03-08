@@ -5,11 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import LearnerLayout from "@/layouts/LearnerLayout";
 import BadgeCard from "@/components/BadgeCard";
 import BadgeDetailModal from "@/components/BadgeDetailModal";
-import { Award, Search, LayoutGrid, List, Eye } from "lucide-react";
+import { Award, Search, LayoutGrid, List, Eye, ShieldCheck, ShieldX, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 
 type BadgeAssertion = {
   id: string;
@@ -48,7 +47,6 @@ export default function LearnerDashboard() {
         .order("issued_at", { ascending: false });
       if (error) throw error;
 
-      // Fetch badge classes + issuers for each assertion
       const badgeClassIds = [...new Set(data.map((a) => a.badge_class_id))];
       const { data: badges } = await supabase
         .from("badge_classes")
@@ -61,7 +59,6 @@ export default function LearnerDashboard() {
         .select("id, name, logo_url")
         .in("id", issuerIds);
 
-      // Fetch view counts for user's assertions
       const assertionIds = data.map((a) => a.id);
       const { data: viewData } = assertionIds.length
         ? await supabase.from("badge_views").select("assertion_id").in("assertion_id", assertionIds)
@@ -111,26 +108,37 @@ export default function LearnerDashboard() {
     revoked: (assertions ?? []).filter((a) => a.revoked).length,
   };
 
+  const statCards = [
+    { label: "Total Badges", value: stats.total, icon: Award, gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
+    { label: "Active", value: stats.active, icon: ShieldCheck, gradient: "from-success/10 to-success/5", iconColor: "text-success" },
+    { label: "Expired", value: stats.expired, icon: Clock, gradient: "from-warning/10 to-warning/5", iconColor: "text-warning" },
+    { label: "Revoked", value: stats.revoked, icon: ShieldX, gradient: "from-destructive/10 to-destructive/5", iconColor: "text-destructive" },
+    { label: "Total Views", value: totalViews, icon: Eye, gradient: "from-secondary/10 to-secondary/5", iconColor: "text-secondary" },
+  ];
+
   return (
     <LearnerLayout>
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-3xl font-bold">
-          Welcome{profile?.full_name ? `, ${profile.full_name}` : ""}! 👋
-        </h1>
-        <p className="mt-1 text-muted-foreground">Here are your earned badges</p>
+      <div className="mx-auto max-w-6xl animate-fade-in">
+        {/* Header */}
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold text-foreground">
+            Welcome{profile?.full_name ? `, ${profile.full_name}` : ""}! 👋
+          </h1>
+          <p className="text-muted-foreground">Here are your earned badges</p>
+        </div>
 
         {/* Stats */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
-          {[
-            { label: "Total", value: stats.total, color: "bg-primary/10 text-primary" },
-            { label: "Active", value: stats.active, color: "bg-green-100 text-green-700" },
-            { label: "Expired", value: stats.expired, color: "bg-amber-100 text-amber-700" },
-            { label: "Revoked", value: stats.revoked, color: "bg-red-100 text-red-700" },
-            { label: "Total Views", value: totalViews, color: "bg-blue-100 text-blue-700" },
-          ].map((s) => (
-            <div key={s.label} className={`rounded-lg p-4 ${s.color}`}>
-              <p className="text-2xl font-bold">{s.value}</p>
-              <p className="text-xs font-medium opacity-80">{s.label}</p>
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5 stagger-children">
+          {statCards.map((s) => (
+            <div
+              key={s.label}
+              className={`group relative overflow-hidden rounded-xl bg-gradient-to-br ${s.gradient} p-4 transition-all duration-200 hover:shadow-card hover:-translate-y-0.5`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <s.icon className={`h-5 w-5 ${s.iconColor} transition-transform group-hover:scale-110`} />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{s.value}</p>
+              <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
             </div>
           ))}
         </div>
@@ -143,11 +151,11 @@ export default function LearnerDashboard() {
               placeholder="Search badges..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-9 h-10"
             />
           </div>
           <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[140px] h-10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -157,11 +165,11 @@ export default function LearnerDashboard() {
               <SelectItem value="revoked">Revoked</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex rounded-md border">
+          <div className="flex rounded-lg border bg-muted/50 p-0.5">
             <Button
               variant={view === "grid" ? "default" : "ghost"}
               size="icon"
-              className="h-9 w-9 rounded-r-none"
+              className="h-8 w-8 rounded-md"
               onClick={() => setView("grid")}
             >
               <LayoutGrid className="h-4 w-4" />
@@ -169,7 +177,7 @@ export default function LearnerDashboard() {
             <Button
               variant={view === "list" ? "default" : "ghost"}
               size="icon"
-              className="h-9 w-9 rounded-l-none"
+              className="h-8 w-8 rounded-md"
               onClick={() => setView("list")}
             >
               <List className="h-4 w-4" />
@@ -181,36 +189,38 @@ export default function LearnerDashboard() {
         {isLoading ? (
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-52 rounded-xl" />
+              <div key={i} className="h-52 rounded-xl shimmer" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="mt-8 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-            <Award className="h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-lg font-medium text-muted-foreground">
+          <div className="mt-8 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 p-16 text-center animate-fade-in">
+            <div className="rounded-2xl bg-muted/50 p-6">
+              <Award className="h-12 w-12 text-muted-foreground/40" />
+            </div>
+            <p className="mt-6 text-lg font-semibold text-foreground">
               {search || filter !== "all" ? "No badges match your filters" : "No badges earned yet"}
             </p>
-            <p className="text-sm text-muted-foreground/70">
+            <p className="mt-1 text-sm text-muted-foreground">
               {search || filter !== "all"
                 ? "Try adjusting your search or filter"
                 : "Badges you earn will appear here"}
             </p>
           </div>
         ) : view === "grid" ? (
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 stagger-children">
             {filtered.map((a) => (
               <BadgeCard key={a.id} assertion={a} onClick={() => setSelected(a)} />
             ))}
           </div>
         ) : (
-          <div className="mt-6 space-y-2">
+          <div className="mt-6 space-y-2 stagger-children">
             {filtered.map((a) => {
               const isExpired = a.expires_at && new Date(a.expires_at) < new Date();
               const status = a.revoked ? "revoked" : isExpired ? "expired" : "active";
               return (
                 <div
                   key={a.id}
-                  className="flex cursor-pointer items-center gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  className="flex cursor-pointer items-center gap-4 rounded-xl border border-border/60 bg-card p-3 transition-all duration-200 hover:shadow-card hover:border-primary/20"
                   onClick={() => setSelected(a)}
                 >
                   {a.badge_class.image_url ? (
@@ -225,16 +235,16 @@ export default function LearnerDashboard() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{a.badge_class.name}</p>
+                    <p className="font-medium truncate text-foreground">{a.badge_class.name}</p>
                     <p className="text-xs text-muted-foreground">{a.badge_class.issuer.name}</p>
                   </div>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
                       status === "active"
-                        ? "bg-green-100 text-green-700"
+                        ? "bg-success/10 text-success"
                         : status === "expired"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-red-100 text-red-700"
+                        ? "bg-warning/10 text-warning"
+                        : "bg-destructive/10 text-destructive"
                     }`}
                   >
                     {status}
