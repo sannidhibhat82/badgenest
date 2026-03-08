@@ -51,6 +51,8 @@ const App = () => (
               <Route path="/admin/learners" element={<ProtectedRoute requireAdmin><LearnersPage /></ProtectedRoute>} />
               <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><AnalyticsPage /></ProtectedRoute>} />
               <Route path="/admin/audit-log" element={<ProtectedRoute requireAdmin><AuditLogPage /></ProtectedRoute>} />
+              <Route path="/admin/api-keys" element={<ProtectedRoute requireAdmin><ApiKeysPage /></ProtectedRoute>} />
+              <Route path="/admin/webhooks" element={<ProtectedRoute requireAdmin><WebhooksPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

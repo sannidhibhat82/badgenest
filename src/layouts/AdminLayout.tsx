@@ -17,6 +17,8 @@ const adminNav = [
   { label: "Learners", href: "/admin/learners", icon: Users },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Audit Log", href: "/admin/audit-log", icon: FileText },
+  { label: "API Keys", href: "/admin/api-keys", icon: Key },
+  { label: "Webhooks", href: "/admin/webhooks", icon: Webhook },
 ];
 
 function NavItems({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
