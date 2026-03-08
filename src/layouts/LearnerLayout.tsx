@@ -35,6 +35,9 @@ export default function LearnerLayout({ children }: { children: ReactNode }) {
               <DropdownMenuItem asChild>
                 <Link to="/dashboard/settings"><Settings className="mr-2 h-4 w-4" />Settings</Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to={`/profile/${user?.id}`}><Share2 className="mr-2 h-4 w-4" />Public Profile</Link>
+              </DropdownMenuItem>
               {isAdmin && (
                 <DropdownMenuItem asChild>
                   <Link to="/admin"><ShieldCheck className="mr-2 h-4 w-4" />Admin Panel</Link>
