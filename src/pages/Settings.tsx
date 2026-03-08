@@ -9,7 +9,48 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Upload, User, Shield, LogOut, CheckCircle } from "lucide-react";
+import { Loader2, Upload, User, Shield, LogOut, CheckCircle, KeyRound } from "lucide-react";
+
+function ChangePasswordCard() {
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleChange = async () => {
+    if (newPw !== confirmPw) { toast.error("Passwords don't match"); return; }
+    if (newPw.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    setSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    setSaving(false);
+    if (error) { toast.error(error.message); } else { toast.success("Password updated!"); setNewPw(""); setConfirmPw(""); }
+  };
+
+  return (
+    <Card className="border-border/60 shadow-card">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <KeyRound className="h-5 w-5 text-primary" />
+          Change Password
+        </CardTitle>
+        <CardDescription>Update your account password</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="new-pw" className="text-sm font-medium">New Password</Label>
+          <Input id="new-pw" type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="••••••••" className="h-11" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirm-pw" className="text-sm font-medium">Confirm Password</Label>
+          <Input id="confirm-pw" type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} placeholder="••••••••" className="h-11" />
+        </div>
+        <Button onClick={handleChange} disabled={saving || !newPw} className="w-full h-11">
+          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Update Password
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function SettingsPage() {
   const { user, profile, signOut } = useAuth();

@@ -92,6 +92,11 @@ export default function Login() {
                 className="h-11"
               />
             </div>
+            <div className="flex justify-end">
+              <Link to="/forgot-password" className="text-xs text-muted-foreground hover:text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
             <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading}>
               {loading ? "Signing in…" : (
                 <>Sign In <ArrowRight className="ml-1 h-4 w-4" /></>
