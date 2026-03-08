@@ -21,6 +21,7 @@ import { logAuditAction } from "@/lib/audit";
 const PAGE_SIZE = 20;
 
 export default function AssertionsPage() {
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [issueOpen, setIssueOpen] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
