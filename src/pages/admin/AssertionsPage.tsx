@@ -189,10 +189,18 @@ export default function AssertionsPage() {
         if (!recipientId) continue;
 
         const evidence = evIdx !== -1 ? cols[evIdx] || null : null;
+        const csvBadge = badges.find((b) => b.id === csvBadgeId);
+        let csvExpiresAt: string | null = null;
+        if (csvBadge?.expiry_days) {
+          const d = new Date();
+          d.setDate(d.getDate() + csvBadge.expiry_days);
+          csvExpiresAt = d.toISOString();
+        }
         const { error } = await supabase.from("assertions").insert({
           recipient_id: recipientId,
           badge_class_id: csvBadgeId,
           evidence_url: evidence,
+          expires_at: csvExpiresAt,
         });
         if (!error) {
           // Get the inserted assertion id for signing
