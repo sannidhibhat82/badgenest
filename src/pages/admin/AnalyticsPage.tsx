@@ -267,9 +267,11 @@ export default function AnalyticsPage() {
       filteredUserIds === null ? data.totalLearners : filteredUserIds.size;
 
     const assertionUserIds = new Set(assertions.map((a) => a.recipient_id));
+    // Build a lookup map to avoid O(n*m) .find() inside .filter()
+    const assertionRecipientMap = new Map(data.assertions.map((a) => [a.id, a.recipient_id]));
     const viewsForUsers = data.views.filter((v) => {
-      const assertion = data.assertions.find((a) => a.id === v.assertion_id);
-      return assertion && filterUser(assertion.recipient_id) && inDateRange(v.viewed_at);
+      const recipientId = assertionRecipientMap.get(v.assertion_id);
+      return recipientId && filterUser(recipientId) && inDateRange(v.viewed_at);
     });
 
     const active = assertions.filter((a) => !a.revoked).length;

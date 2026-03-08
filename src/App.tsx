@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,29 +8,46 @@ import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import IssuersPage from "./pages/admin/IssuersPage";
-import BadgesPage from "./pages/admin/BadgesPage";
-import AssertionsPage from "./pages/admin/AssertionsPage";
-import LearnersPage from "./pages/admin/LearnersPage";
-import AnalyticsPage from "./pages/admin/AnalyticsPage";
-import AuditLogPage from "./pages/admin/AuditLogPage";
-import ApiKeysPage from "./pages/admin/ApiKeysPage";
-import WebhooksPage from "./pages/admin/WebhooksPage";
-import Settings from "./pages/Settings";
-import Verify from "./pages/Verify";
-import PublicProfile from "./pages/PublicProfile";
-import ClaimBadge from "./pages/ClaimBadge";
-import Documentation from "./pages/Documentation";
-import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Lazy-loaded route components for code splitting
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const IssuersPage = lazy(() => import("./pages/admin/IssuersPage"));
+const BadgesPage = lazy(() => import("./pages/admin/BadgesPage"));
+const AssertionsPage = lazy(() => import("./pages/admin/AssertionsPage"));
+const LearnersPage = lazy(() => import("./pages/admin/LearnersPage"));
+const AnalyticsPage = lazy(() => import("./pages/admin/AnalyticsPage"));
+const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage"));
+const ApiKeysPage = lazy(() => import("./pages/admin/ApiKeysPage"));
+const WebhooksPage = lazy(() => import("./pages/admin/WebhooksPage"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Verify = lazy(() => import("./pages/Verify"));
+const PublicProfile = lazy(() => import("./pages/PublicProfile"));
+const ClaimBadge = lazy(() => import("./pages/ClaimBadge"));
+const Documentation = lazy(() => import("./pages/Documentation"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes — reduces redundant refetches
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    </div>
+  );
+}
 
 const App = () => (
   <HelmetProvider>
@@ -40,6 +58,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <ErrorBoundary>
+            <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -63,6 +82,7 @@ const App = () => (
               <Route path="/admin/webhooks" element={<ProtectedRoute requireAdmin><WebhooksPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             </ErrorBoundary>
           </AuthProvider>
         </BrowserRouter>
