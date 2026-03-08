@@ -475,7 +475,7 @@ export default function Documentation() {
               </Table>
             </div>
             <P>
-              <strong>Key takeaway:</strong> Evolve Careers is the only platform that combines full
+              <strong>Key takeaway:</strong> BadgeNest is the only platform that combines full
               data ownership, cryptographic integrity, white-label branding, and transparent pricing in
               a single package.
             </P>
