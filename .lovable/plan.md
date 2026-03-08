@@ -1,77 +1,93 @@
 
 
-## Full Application Analysis: What's Built vs What's Missing
+# Evolve Careers Digital Badge Platform
 
-### Critical Build Error (Blocking)
-The `jspdf` package is imported in `AnalyticsPage.tsx` but **not installed** in `package.json`. This is causing all builds to fail. Must be added as a dependency.
-
----
-
-### What's Fully Implemented
-
-| Feature | Status |
-|---|---|
-| Auth (login/signup, roles, protected routes) | Done |
-| Admin Dashboard (KPIs, trend chart, recent activity) | Done |
-| Badge Class CRUD (create/edit/delete, image upload, categories) | Done |
-| Issuer CRUD (name, logo, website, description) | Done |
-| Assertion Management (issue, revoke, delete, CSV bulk) | Done |
-| Badge Invites (send invite link, claim flow) | Done |
-| Learner Dashboard (badge grid/list, search, filters, stats) | Done |
-| Public Verification Page (status, JSON-LD, snapshot, signature) | Done |
-| Public Profile Page (badge portfolio, stats) | Done |
-| Learner Settings (name, avatar upload) | Done |
-| Notifications (bell icon, mark read) | Done |
-| Analytics (KPIs, charts, tag/date filters, PDF export) | Done |
-| Audit Log (searchable, filterable, paginated) | Done |
-| API Keys (create, permissions, revoke) | Done |
-| Webhooks (CRUD, event selection, signing secret) | Done |
-| Public REST API (edge function with key auth) | Done |
-| Signed Badge Metadata (HMAC, snapshot, bulk re-sign) | Done |
-| Learner Tagging (create, assign, bulk, CSV export) | Done |
+## Overview
+A private digital badge platform where admins create/issue badges, learners view/share them, and anyone can verify badges via public URLs.
 
 ---
 
-### What's Missing or Incomplete
+## Phase 1: Backend Setup (Lovable Cloud / Supabase)
 
-**1. Build fix — `jspdf` not in package.json**
-The Analytics PDF export will crash in production. Need to add `jspdf` to dependencies.
+### Database Tables
+- **Issuers** — name, description, email, website, logo (supports multiple issuers)
+- **Badge Classes** — name, description, image, criteria, linked issuer, optional expiry
+- **Assertions** (issued badges) — links badge class to learner, issue date, evidence URL, expiry, revoked status
+- **User Roles** — separate role table (admin/learner) with RLS security
 
-**2. Email notifications on badge issuance**
-The `send-badge-notification` edge function exists but I'd need to verify it's actually wired up. The plan explicitly deferred email notifications, so this likely isn't connected to the issuance flow.
-
-**3. Password reset / forgot password flow**
-No "Forgot password?" link on the Login page. No password change option in Settings. Users have no self-service recovery path.
-
-**4. Email verification enforcement**
-Signup creates accounts but there's no gate ensuring users verify their email before accessing the dashboard. The `ProtectedRoute` only checks `user` existence, not email confirmation status.
-
-**5. Badge expiry auto-calculation**
-Badge classes have `expiry_days` but assertions don't auto-compute `expires_at` from `issued_at + expiry_days` during issuance. This appears to be left manual.
-
-**6. Responsive / mobile polish**
-Admin sidebar uses a Sheet for mobile, but the data-heavy tables (assertions, learners, audit log) likely overflow on small screens without horizontal scroll or card-based mobile layouts.
-
-**7. Landing page / marketing page**
-The `/` route just redirects to login or dashboard. There's no public-facing landing page explaining what the platform is — useful if the published URL is shared externally.
-
-**8. Accessibility (a11y)**
-No evidence of skip-nav links, ARIA labels on custom components, or keyboard navigation testing beyond what Radix provides by default.
-
-**9. Error boundaries**
-No React error boundary wrapping the app. A runtime crash in any page takes down the entire application.
-
-**10. Rate limiting on public endpoints**
-The public API edge function and verification page have no rate limiting. The `badge_views` insert is unauthenticated and could be spammed.
+### Auth & Access Control
+- Supabase Auth for login/signup
+- Role-based access: admins manage everything, learners see only their own badges
+- Row-Level Security policies enforced at database level
 
 ---
 
-### Recommended Priority Order
+## Phase 2: Admin Dashboard (`/admin`)
 
-1. **Fix `jspdf` build error** — blocking all deployments
-2. **Add forgot password flow** — critical user experience gap
-3. **Auto-calculate badge expiry** — data integrity issue
-4. **Add error boundaries** — production resilience
-5. **Email verification gate** — security best practice
-6. **Mobile responsive tables** — usability on phones
+### Badge Management
+- Table view of all badge classes with create, edit, delete
+- Image upload for badge artwork
+- Set criteria and optional expiration period
+
+### Badge Issuance
+- Form: select learner + badge class + evidence URL + issue date
+- **CSV bulk issuance**: upload CSV to issue badges to multiple learners at once
+
+### Issuer Management
+- CRUD for multiple issuers (name, logo, website, description)
+
+### Assertion Management
+- List all issued badges with filters
+- Revoke/un-revoke toggle with optional reason
+
+### Learner Management
+- View all learners and their badges
+- Filter by learner name or badge name
+
+### Analytics Section
+- Counts: badges issued, revoked, active
+- Recent activity log
+
+---
+
+## Phase 3: Learner Dashboard (`/dashboard`)
+
+### My Badges
+- Personalized greeting with profile picture
+- Grid/list of earned badges showing name, image, date, status (valid/expired/revoked)
+- Badge detail modal: full description, criteria, issuer info, download image
+
+### Sharing
+- Copy verification link
+- Share to LinkedIn (pre-filled URL)
+- Social share buttons (LinkedIn, Twitter)
+
+### Account Settings
+- Update name and profile picture
+- Logout
+
+---
+
+## Phase 4: Public Verification Page (`/verify/:assertionId`)
+
+- Displays badge info, issuer, learner, and issue date
+- Shows status: ✅ Valid, ⚠️ Expired, ❌ Revoked
+- JSON-LD structured data (Open Badges format) in page head
+- Share button for the verification URL
+
+---
+
+## Phase 5: Branding & Polish
+
+- Apply Evolve Careers colors, fonts, logo, and favicon (from uploaded assets)
+- Responsive design for mobile and desktop
+- Clean, professional UI throughout
+
+---
+
+## Not Included (per spec)
+- Email notifications (deferred)
+- Cryptographic signatures / baked PNGs
+- Full Open Badges spec compliance
+- LMS/LTI integrations
 

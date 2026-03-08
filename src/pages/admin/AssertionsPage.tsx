@@ -70,7 +70,7 @@ export default function AssertionsPage() {
   const { data: badges = [] } = useQuery({
     queryKey: ["badge_classes"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("badge_classes").select("id, name").order("name");
+      const { data, error } = await supabase.from("badge_classes").select("id, name, expiry_days").order("name");
       if (error) throw error;
       return data;
     },
@@ -102,10 +102,20 @@ export default function AssertionsPage() {
 
       if (!recipientId) throw new Error("Please select a learner or enter an email");
 
+      // Auto-calculate expires_at from badge_class.expiry_days
+      const selectedBadge = badges.find((b) => b.id === form.badge_class_id);
+      let expiresAt: string | null = null;
+      if (selectedBadge?.expiry_days) {
+        const d = new Date();
+        d.setDate(d.getDate() + selectedBadge.expiry_days);
+        expiresAt = d.toISOString();
+      }
+
       const { data: inserted, error } = await supabase.from("assertions").insert({
         recipient_id: recipientId,
         badge_class_id: form.badge_class_id,
         evidence_url: form.evidence_url || null,
+        expires_at: expiresAt,
       }).select("id").single();
       if (error) throw error;
 
@@ -179,10 +189,18 @@ export default function AssertionsPage() {
         if (!recipientId) continue;
 
         const evidence = evIdx !== -1 ? cols[evIdx] || null : null;
+        const csvBadge = badges.find((b) => b.id === csvBadgeId);
+        let csvExpiresAt: string | null = null;
+        if (csvBadge?.expiry_days) {
+          const d = new Date();
+          d.setDate(d.getDate() + csvBadge.expiry_days);
+          csvExpiresAt = d.toISOString();
+        }
         const { error } = await supabase.from("assertions").insert({
           recipient_id: recipientId,
           badge_class_id: csvBadgeId,
           evidence_url: evidence,
+          expires_at: csvExpiresAt,
         });
         if (!error) {
           // Get the inserted assertion id for signing
@@ -353,7 +371,7 @@ export default function AssertionsPage() {
       </div>
 
       <Card className="mt-4">
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
