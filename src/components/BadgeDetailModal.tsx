@@ -135,7 +135,7 @@ export default function BadgeDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden p-0">
         <DialogHeader className="sr-only">
           <DialogTitle>Badge Details</DialogTitle>
         </DialogHeader>
@@ -169,7 +169,7 @@ export default function BadgeDetailModal({
           </div>
         </div>
 
-        <div className="px-6 pb-6 space-y-5">
+        <div className="px-6 pb-6 space-y-5 min-w-0">
           {/* Details */}
           <div className="space-y-3 text-sm">
             <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
@@ -251,7 +251,7 @@ export default function BadgeDetailModal({
               <Share2 className="mr-1.5 inline h-3.5 w-3.5" />
               Share & Add to Profile
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 min-w-0">
               <Button
                 variant="outline"
                 size="sm"
