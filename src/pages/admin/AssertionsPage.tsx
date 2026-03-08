@@ -193,7 +193,7 @@ export default function AssertionsPage() {
     onError: (e: Error) => toast({ title: "CSV Error", description: e.message, variant: "destructive" }),
   });
 
-  // Revoke with reason
+  // Revoke with reason + audit
   const toggleRevoke = useMutation({
     mutationFn: async ({ id, revoked, reason }: { id: string; revoked: boolean; reason: string }) => {
       const { error } = await supabase.from("assertions").update({
@@ -201,18 +201,61 @@ export default function AssertionsPage() {
         revocation_reason: revoked ? (reason || "Revoked by admin") : null,
       }).eq("id", id);
       if (error) throw error;
+
+      const assertion = assertions.find((a: any) => a.id === id);
+      await logAuditAction(revoked ? "badge.revoked" : "badge.restored", "assertion", id, {
+        badge_name: assertion?.badge_classes?.name,
+        learner_name: assertion?.profile?.full_name,
+        reason: revoked ? reason : undefined,
+      });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["assertions"] }); setRevokeTarget(null); setRevokeReason(""); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // Delete
+  // Delete + audit
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const assertion = assertions.find((a: any) => a.id === id);
       const { error } = await supabase.from("assertions").delete().eq("id", id);
       if (error) throw error;
+      await logAuditAction("badge.deleted", "assertion", id, {
+        badge_name: assertion?.badge_classes?.name,
+        learner_name: assertion?.profile?.full_name,
+      });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["assertions"] }); setDeleteId(null); toast({ title: "Assertion deleted" }); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // Invite mutation
+  const inviteMutation = useMutation({
+    mutationFn: async () => {
+      if (!inviteForm.email || !inviteForm.badge_class_id) throw new Error("Email and badge are required");
+
+      const { data, error } = await supabase.from("badge_invites").insert({
+        email: inviteForm.email.trim().toLowerCase(),
+        badge_class_id: inviteForm.badge_class_id,
+        evidence_url: inviteForm.evidence_url || null,
+        invited_by: user!.id,
+      }).select("invite_token").single();
+      if (error) throw error;
+
+      const badgeName = badges.find((b) => b.id === inviteForm.badge_class_id)?.name || "Badge";
+      await logAuditAction("invite.sent", "badge_invite", null, {
+        email: inviteForm.email,
+        badge_name: badgeName,
+      });
+
+      return data;
+    },
+    onSuccess: (data) => {
+      const claimUrl = `${window.location.origin}/claim/${data.invite_token}`;
+      navigator.clipboard.writeText(claimUrl);
+      qc.invalidateQueries({ queryKey: ["assertions"] });
+      setInviteOpen(false);
+      toast({ title: "Invite created! Link copied to clipboard.", description: claimUrl });
+    },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
