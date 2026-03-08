@@ -103,6 +103,7 @@ export default function LearnerDashboard() {
     return true;
   });
 
+  const totalViews = (assertions ?? []).reduce((sum, a: any) => sum + (a.views || 0), 0);
   const stats = {
     total: (assertions ?? []).length,
     active: (assertions ?? []).filter((a) => !a.revoked && !(a.expires_at && new Date(a.expires_at) < new Date())).length,
