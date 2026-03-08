@@ -1,93 +1,39 @@
 
 
-# Evolve Careers Digital Badge Platform
+## Plan: Create In-App Documentation Page with Competitive Analysis
 
-## Overview
-A private digital badge platform where admins create/issue badges, learners view/share them, and anyone can verify badges via public URLs.
+The documentation currently exists as a raw markdown file at `public/documentation.md` but has no route or page to display it. I'll create a beautifully styled, accessible documentation page at `/docs` with a sidebar table of contents, and expand the content to include a competitive analysis section comparing this platform to Credly, Badgr, Accredible, and others.
 
----
+### What I'll Build
 
-## Phase 1: Backend Setup (Lovable Cloud / Supabase)
+**1. New page: `src/pages/Documentation.tsx`**
+A full-featured documentation page with:
+- Sticky sidebar with table of contents navigation
+- Styled markdown-like content rendered as React components
+- Sections covering all existing documentation plus new content:
+  - Platform overview and value proposition
+  - **"Why Evolve Careers?" section** -- key differentiators
+  - **Competitive comparison table** vs Credly, Badgr/Canvas Credentials, Accredible, Open Badge Factory
+  - Complete feature list with descriptions
+  - Architecture and tech stack
+  - Admin dashboard guide
+  - Learner dashboard guide
+  - Public verification and sharing
+  - API and integrations (webhooks, REST API)
+  - Security and data integrity (HMAC signatures, RLS, snapshots)
+  - Database schema reference
+- Mobile-responsive (sidebar collapses to a dropdown)
+- Search/filter within the TOC
 
-### Database Tables
-- **Issuers** — name, description, email, website, logo (supports multiple issuers)
-- **Badge Classes** — name, description, image, criteria, linked issuer, optional expiry
-- **Assertions** (issued badges) — links badge class to learner, issue date, evidence URL, expiry, revoked status
-- **User Roles** — separate role table (admin/learner) with RLS security
+**2. Route addition in `src/App.tsx`**
+- Add `/docs` as a public route
 
-### Auth & Access Control
-- Supabase Auth for login/signup
-- Role-based access: admins manage everything, learners see only their own badges
-- Row-Level Security policies enforced at database level
+**3. Content additions (new sections not in current docs)**
+- "Why Evolve Careers" -- positioning and unique selling points
+- Competitive comparison matrix (Credly, Badgr, Accredible, Open Badge Factory) covering pricing model, customization, white-label, API access, data ownership, self-hosting, cryptographic integrity, and Open Badges compliance
+- Feature highlights with descriptions of what makes each feature valuable
 
----
-
-## Phase 2: Admin Dashboard (`/admin`)
-
-### Badge Management
-- Table view of all badge classes with create, edit, delete
-- Image upload for badge artwork
-- Set criteria and optional expiration period
-
-### Badge Issuance
-- Form: select learner + badge class + evidence URL + issue date
-- **CSV bulk issuance**: upload CSV to issue badges to multiple learners at once
-
-### Issuer Management
-- CRUD for multiple issuers (name, logo, website, description)
-
-### Assertion Management
-- List all issued badges with filters
-- Revoke/un-revoke toggle with optional reason
-
-### Learner Management
-- View all learners and their badges
-- Filter by learner name or badge name
-
-### Analytics Section
-- Counts: badges issued, revoked, active
-- Recent activity log
-
----
-
-## Phase 3: Learner Dashboard (`/dashboard`)
-
-### My Badges
-- Personalized greeting with profile picture
-- Grid/list of earned badges showing name, image, date, status (valid/expired/revoked)
-- Badge detail modal: full description, criteria, issuer info, download image
-
-### Sharing
-- Copy verification link
-- Share to LinkedIn (pre-filled URL)
-- Social share buttons (LinkedIn, Twitter)
-
-### Account Settings
-- Update name and profile picture
-- Logout
-
----
-
-## Phase 4: Public Verification Page (`/verify/:assertionId`)
-
-- Displays badge info, issuer, learner, and issue date
-- Shows status: ✅ Valid, ⚠️ Expired, ❌ Revoked
-- JSON-LD structured data (Open Badges format) in page head
-- Share button for the verification URL
-
----
-
-## Phase 5: Branding & Polish
-
-- Apply Evolve Careers colors, fonts, logo, and favicon (from uploaded assets)
-- Responsive design for mobile and desktop
-- Clean, professional UI throughout
-
----
-
-## Not Included (per spec)
-- Email notifications (deferred)
-- Cryptographic signatures / baked PNGs
-- Full Open Badges spec compliance
-- LMS/LTI integrations
+### Files to Create/Modify
+1. **New**: `src/pages/Documentation.tsx` -- Full documentation page component
+2. **Edit**: `src/App.tsx` -- Add `/docs` route
 
