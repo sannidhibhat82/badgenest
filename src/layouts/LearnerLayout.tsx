@@ -4,8 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, ShieldCheck } from "lucide-react";
+import { LogOut, Settings, ShieldCheck, Share2 } from "lucide-react";
 import evolveLogo from "@/assets/evolve-logo.png";
+import NotificationCenter from "@/components/NotificationCenter";
 
 export default function LearnerLayout({ children }: { children: ReactNode }) {
   const { profile, signOut, isAdmin } = useAuth();
