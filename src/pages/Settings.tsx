@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Upload, User } from "lucide-react";
+import { Loader2, Upload, User, Shield, LogOut, CheckCircle } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, profile, signOut } = useAuth();
@@ -16,6 +17,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? "");
+  const [saved, setSaved] = useState(false);
 
   const initials = fullName
     ? fullName.split(" ").map((n) => n[0]).join("").toUpperCase()
@@ -32,7 +34,9 @@ export default function SettingsPage() {
     if (error) {
       toast.error("Failed to update profile");
     } else {
+      setSaved(true);
       toast.success("Profile updated!");
+      setTimeout(() => setSaved(false), 2000);
     }
   };
 
@@ -56,82 +60,114 @@ export default function SettingsPage() {
 
   return (
     <LearnerLayout>
-      <div className="mx-auto max-w-xl">
-        <h1 className="text-3xl font-bold">Account Settings</h1>
-        <p className="mt-1 text-muted-foreground">Manage your profile information</p>
+      <div className="mx-auto max-w-2xl animate-fade-in">
+        <div className="space-y-1 mb-6">
+          <h1 className="text-3xl font-bold text-foreground">Account Settings</h1>
+          <p className="text-muted-foreground">Manage your profile and preferences</p>
+        </div>
 
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Update your name and avatar</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Avatar */}
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={avatarUrl || undefined} />
-                <AvatarFallback className="text-lg">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <Label
-                  htmlFor="avatar-upload"
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
-                >
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
-                  Upload Photo
-                </Label>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                />
-                <p className="mt-1 text-xs text-muted-foreground">JPG, PNG. Max 2MB.</p>
-              </div>
-            </div>
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="bg-muted/50 p-1">
+            <TabsTrigger value="profile" className="gap-2">
+              <User className="h-4 w-4" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="security" className="gap-2">
+              <Shield className="h-4 w-4" />
+              Security
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Name */}
-            <div className="space-y-2">
-              <Label htmlFor="full-name">Full Name</Label>
-              <Input
-                id="full-name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Your name"
-              />
-            </div>
+          <TabsContent value="profile" className="space-y-4">
+            <Card className="border-border/60 shadow-card">
+              <CardHeader>
+                <CardTitle className="text-lg">Profile Information</CardTitle>
+                <CardDescription>Update your name and avatar</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Avatar */}
+                <div className="flex items-center gap-5">
+                  <Avatar className="h-20 w-20 ring-2 ring-border shadow-sm">
+                    <AvatarImage src={avatarUrl || undefined} />
+                    <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <Label
+                      htmlFor="avatar-upload"
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border/60 bg-card px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 hover:shadow-sm"
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      Upload Photo
+                    </Label>
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
+                    />
+                    <p className="mt-1.5 text-xs text-muted-foreground">JPG, PNG. Max 2MB.</p>
+                  </div>
+                </div>
 
-            {/* Email (read-only) */}
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input value={user?.email ?? ""} disabled />
-              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
-            </div>
+                {/* Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="full-name" className="text-sm font-medium">Full Name</Label>
+                  <Input
+                    id="full-name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Your name"
+                    className="h-11"
+                  />
+                </div>
 
-            <Button onClick={handleSave} disabled={saving} className="w-full">
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </CardContent>
-        </Card>
+                {/* Email (read-only) */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Email</Label>
+                  <Input value={user?.email ?? ""} disabled className="h-11 bg-muted/30" />
+                  <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+                </div>
 
-        <Card className="mt-4 border-destructive/20">
-          <CardHeader>
-            <CardTitle className="text-destructive">Danger Zone</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button variant="destructive" onClick={signOut}>
-              Sign Out
-            </Button>
-          </CardContent>
-        </Card>
+                <Button onClick={handleSave} disabled={saving} className="w-full h-11">
+                  {saving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : saved ? (
+                    <CheckCircle className="mr-2 h-4 w-4 text-success" />
+                  ) : null}
+                  {saved ? "Saved!" : "Save Changes"}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-4">
+            <Card className="border-destructive/20 shadow-card">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <LogOut className="h-5 w-5 text-destructive" />
+                  Danger Zone
+                </CardTitle>
+                <CardDescription>Actions that affect your account</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Signing out will end your current session. You can sign back in at any time.
+                </p>
+                <Button variant="destructive" onClick={signOut} className="shadow-sm">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </LearnerLayout>
   );

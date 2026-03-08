@@ -57,10 +57,7 @@ export default function PublicProfile() {
         ? await supabase.from("issuers").select("id, name, logo_url").in("id", issuerIds)
         : { data: [] };
 
-      const { data: viewCounts } = await supabase
-        .from("badge_views")
-        .select("assertion_id");
-
+      const { data: viewCounts } = await supabase.from("badge_views").select("assertion_id");
       const viewMap: Record<string, number> = {};
       for (const v of viewCounts ?? []) {
         viewMap[v.assertion_id] = (viewMap[v.assertion_id] || 0) + 1;
@@ -70,8 +67,6 @@ export default function PublicProfile() {
       const badgeMap = Object.fromEntries(
         (badges ?? []).map((b) => [b.id, { ...b, issuer: issuerMap[b.issuer_id] }])
       );
-
-      // Unique issuers for stats
       const uniqueIssuers = new Set((badges ?? []).map((b) => b.issuer_id));
 
       return {
@@ -89,11 +84,7 @@ export default function PublicProfile() {
   });
 
   const initials = data?.profile?.full_name
-    ? data.profile.full_name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
+    ? data.profile.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase()
     : "?";
 
   if (isLoading)
@@ -110,9 +101,11 @@ export default function PublicProfile() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <Award className="mx-auto h-12 w-12 text-muted-foreground/40" />
-          <p className="mt-3 text-lg font-medium text-foreground">Profile not found</p>
-          <p className="text-sm text-muted-foreground">This profile may not exist or is private.</p>
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
+            <Award className="h-8 w-8 text-muted-foreground/40" />
+          </div>
+          <p className="text-lg font-semibold text-foreground">Profile not found</p>
+          <p className="text-sm text-muted-foreground mt-1">This profile may not exist or is private.</p>
         </div>
       </div>
     );
@@ -133,7 +126,7 @@ export default function PublicProfile() {
 
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+        <header className="sticky top-0 z-10 glass">
           <div className="container mx-auto flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2.5">
               <img src={evolveLogo} alt="Evolve Careers" className="h-7" />
@@ -147,14 +140,17 @@ export default function PublicProfile() {
           </div>
         </header>
 
-        {/* Hero */}
+        {/* Hero with decorative shapes */}
         <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-primary/3 to-transparent" />
+          {/* Gradient mesh background */}
+          <div className="absolute inset-0 gradient-mesh" />
+          {/* Decorative circles */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
 
-          <div className="relative container mx-auto max-w-4xl px-4 py-12">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
-              <Avatar className="h-28 w-28 ring-4 ring-card shadow-xl">
+          <div className="relative container mx-auto max-w-4xl px-4 py-14">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 animate-slide-up">
+              <Avatar className="h-28 w-28 ring-4 ring-card shadow-elevated">
                 <AvatarImage src={data.profile.avatar_url ?? undefined} />
                 <AvatarFallback className="text-3xl font-bold bg-primary text-primary-foreground">
                   {initials}
@@ -168,26 +164,22 @@ export default function PublicProfile() {
 
                 {/* Stats row */}
                 <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-4">
-                  <div className="flex items-center gap-1.5 text-sm">
+                  <div className="flex items-center gap-1.5 rounded-full bg-card/80 backdrop-blur-sm px-3 py-1.5 text-sm shadow-sm border border-border/50">
                     <Trophy className="h-4 w-4 text-primary" />
                     <span className="font-semibold text-foreground">{activeCount}</span>
                     <span className="text-muted-foreground">badge{activeCount !== 1 ? "s" : ""}</span>
                   </div>
-                  <Separator orientation="vertical" className="h-4" />
-                  <div className="flex items-center gap-1.5 text-sm">
+                  <div className="flex items-center gap-1.5 rounded-full bg-card/80 backdrop-blur-sm px-3 py-1.5 text-sm shadow-sm border border-border/50">
                     <Award className="h-4 w-4 text-muted-foreground" />
                     <span className="font-semibold text-foreground">{data.uniqueIssuerCount}</span>
                     <span className="text-muted-foreground">issuer{data.uniqueIssuerCount !== 1 ? "s" : ""}</span>
                   </div>
                   {data.totalViews > 0 && (
-                    <>
-                      <Separator orientation="vertical" className="h-4" />
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold text-foreground">{data.totalViews}</span>
-                        <span className="text-muted-foreground">view{data.totalViews !== 1 ? "s" : ""}</span>
-                      </div>
-                    </>
+                    <div className="flex items-center gap-1.5 rounded-full bg-card/80 backdrop-blur-sm px-3 py-1.5 text-sm shadow-sm border border-border/50">
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold text-foreground">{data.totalViews}</span>
+                      <span className="text-muted-foreground">view{data.totalViews !== 1 ? "s" : ""}</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -198,29 +190,31 @@ export default function PublicProfile() {
         {/* Badge grid */}
         <main className="container mx-auto max-w-4xl px-4 py-8">
           {data.assertions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed p-16 text-center">
-              <Award className="h-16 w-16 text-muted-foreground/30" />
-              <p className="mt-4 text-lg font-medium text-muted-foreground">No badges earned yet</p>
-              <p className="mt-1 text-sm text-muted-foreground/70">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 p-16 text-center animate-fade-in">
+              <div className="rounded-2xl bg-muted/50 p-6">
+                <Award className="h-12 w-12 text-muted-foreground/30" />
+              </div>
+              <p className="mt-6 text-lg font-semibold text-foreground">No badges earned yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Badges will appear here once earned.
               </p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
               {data.assertions.map((a) => {
                 const status = getStatus(a);
                 const StatusIcon = status.icon;
                 return (
                   <Link key={a.id} to={`/verify/${a.id}`} className="group">
-                    <Card className="h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 border-border/60 group-hover:border-primary/30">
+                    <Card className="h-full border-border/60 transition-all duration-300 hover:shadow-elevated hover:-translate-y-1 group-hover:border-primary/20 overflow-hidden">
                       <CardContent className="p-5">
                         <div className="flex items-start gap-4">
                           {a.badge?.image_url ? (
-                            <div className="shrink-0 rounded-xl bg-muted/50 p-1.5 ring-1 ring-border group-hover:ring-primary/20 transition-colors">
+                            <div className="shrink-0 rounded-xl bg-muted/50 p-1.5 ring-1 ring-border group-hover:ring-primary/20 transition-all duration-300">
                               <img
                                 src={a.badge.image_url}
                                 alt={a.badge.name}
-                                className="h-14 w-14 rounded-lg object-contain"
+                                className="h-14 w-14 rounded-lg object-contain transition-transform duration-300 group-hover:scale-110"
                               />
                             </div>
                           ) : (
@@ -271,7 +265,7 @@ export default function PublicProfile() {
         </main>
 
         {/* Footer */}
-        <footer className="border-t mt-12">
+        <footer className="border-t border-border/60 mt-12">
           <div className="container mx-auto max-w-4xl px-4 py-6 text-center">
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Shield className="h-3.5 w-3.5" />

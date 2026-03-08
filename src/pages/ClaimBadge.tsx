@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, CheckCircle, Gift } from "lucide-react";
+import { Award, CheckCircle, Gift, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import evolveLogo from "@/assets/evolve-logo.png";
 
@@ -24,7 +24,6 @@ export default function ClaimBadge() {
         .single();
       if (error) throw error;
 
-      // Fetch issuer
       if (data.badge_classes) {
         const { data: issuer } = await supabase
           .from("issuers")
@@ -43,7 +42,6 @@ export default function ClaimBadge() {
       if (!user) throw new Error("You must be signed in to claim a badge");
       if (!invite) throw new Error("Invalid invite");
 
-      // Create assertion
       const { error: assertErr } = await supabase.from("assertions").insert({
         recipient_id: user.id,
         badge_class_id: invite.badge_class_id,
@@ -51,7 +49,6 @@ export default function ClaimBadge() {
       });
       if (assertErr) throw assertErr;
 
-      // Mark invite as claimed
       const { error: updateErr } = await supabase
         .from("badge_invites")
         .update({ status: "claimed", claimed_by: user.id, claimed_at: new Date().toISOString() })
@@ -66,13 +63,25 @@ export default function ClaimBadge() {
     onError: (e: Error) => toast({ title: "Claim failed", description: e.message, variant: "destructive" }),
   });
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading invite…</p></div>;
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background gradient-mesh">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="text-sm text-muted-foreground">Loading invite…</p>
+      </div>
+    </div>
+  );
+
   if (error || !invite) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Card className="max-w-md w-full mx-4">
-        <CardContent className="text-center py-10">
-          <p className="text-destructive font-medium">Invalid or expired invite link.</p>
-          <Link to="/" className="text-primary hover:underline text-sm mt-2 block">Go to homepage</Link>
+    <div className="min-h-screen flex items-center justify-center bg-background gradient-mesh px-4">
+      <Card className="max-w-md w-full border-border/60 shadow-card animate-scale-in">
+        <CardContent className="text-center py-12">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-4">
+            <Award className="h-8 w-8 text-destructive" />
+          </div>
+          <p className="text-lg font-semibold text-foreground">Invalid or expired invite</p>
+          <p className="text-sm text-muted-foreground mt-1">This link may have already been used or doesn't exist.</p>
+          <Link to="/" className="text-primary hover:underline text-sm mt-4 block font-medium">Go to homepage</Link>
         </CardContent>
       </Card>
     </div>
@@ -83,31 +92,37 @@ export default function ClaimBadge() {
   const isClaimed = invite.status === "claimed";
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <Card className="max-w-md w-full">
-        <CardHeader className="text-center">
-          <img src={evolveLogo} alt="Evolve Careers" className="mx-auto mb-4 h-10 w-auto" />
-          <Gift className="mx-auto h-12 w-12 text-primary mb-3" />
+    <div className="min-h-screen bg-background gradient-mesh flex items-center justify-center px-4 py-12">
+      <Card className="max-w-md w-full border-border/60 shadow-elevated animate-scale-in overflow-hidden">
+        {/* Decorative top bar */}
+        <div className="h-1.5 bg-gradient-to-r from-primary via-secondary to-primary" />
+
+        <CardHeader className="text-center pt-8 pb-4">
+          <img src={evolveLogo} alt="Evolve Careers" className="mx-auto mb-6 h-10 w-auto" />
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            {isClaimed ? <CheckCircle className="h-7 w-7 text-success" /> : <Gift className="h-7 w-7 text-primary animate-float" />}
+          </div>
           <CardTitle className="text-2xl">
             {isClaimed ? "Badge Already Claimed" : "You've Been Invited!"}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="mt-1">
             {isClaimed
               ? "This badge invite has already been claimed."
-              : `You've been invited to claim the "${badge?.name}" badge.`}
+              : `Claim the "${badge?.name}" badge below.`}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+
+        <CardContent className="space-y-6 pb-8">
           {/* Badge preview */}
-          <div className="flex items-center gap-4 rounded-lg border p-4">
+          <div className="flex items-center gap-4 rounded-xl border border-border/60 bg-muted/30 p-4">
             {badge?.image_url ? (
-              <img src={badge.image_url} alt={badge.name} className="h-16 w-16 rounded-lg object-contain border" />
+              <img src={badge.image_url} alt={badge.name} className="h-16 w-16 rounded-xl object-contain border border-border/60 bg-card p-1" />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary/10">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
                 <Award className="h-8 w-8 text-primary" />
               </div>
             )}
-            <div>
+            <div className="min-w-0">
               <p className="font-semibold text-foreground">{badge?.name}</p>
               {issuer && <p className="text-sm text-muted-foreground">by {issuer.name}</p>}
               {badge?.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{badge.description}</p>}
@@ -115,22 +130,29 @@ export default function ClaimBadge() {
           </div>
 
           {isClaimed ? (
-            <div className="text-center">
-              <CheckCircle className="mx-auto h-8 w-8 text-green-600 mb-2" />
+            <div className="text-center space-y-3">
               <p className="text-sm text-muted-foreground">This invite was already claimed.</p>
-              <Button asChild className="mt-4 w-full"><Link to="/dashboard">Go to Dashboard</Link></Button>
+              <Button asChild className="w-full">
+                <Link to="/dashboard">Go to Dashboard <ArrowRight className="ml-1 h-4 w-4" /></Link>
+              </Button>
             </div>
           ) : !user ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <p className="text-sm text-center text-muted-foreground">Sign in or create an account to claim this badge.</p>
               <div className="flex gap-2">
-                <Button asChild className="flex-1"><Link to={`/login?redirect=/claim/${token}`}>Sign In</Link></Button>
-                <Button asChild variant="outline" className="flex-1"><Link to={`/signup?redirect=/claim/${token}`}>Sign Up</Link></Button>
+                <Button asChild className="flex-1">
+                  <Link to={`/login?redirect=/claim/${token}`}>Sign In</Link>
+                </Button>
+                <Button asChild variant="outline" className="flex-1">
+                  <Link to={`/signup?redirect=/claim/${token}`}>Sign Up</Link>
+                </Button>
               </div>
             </div>
           ) : (
-            <Button onClick={() => claimMutation.mutate()} disabled={claimMutation.isPending} className="w-full" size="lg">
-              {claimMutation.isPending ? "Claiming…" : "Claim Badge"}
+            <Button onClick={() => claimMutation.mutate()} disabled={claimMutation.isPending} className="w-full h-12 text-sm font-semibold" size="lg">
+              {claimMutation.isPending ? "Claiming…" : (
+                <><Sparkles className="mr-2 h-4 w-4" />Claim Badge</>
+              )}
             </Button>
           )}
         </CardContent>
