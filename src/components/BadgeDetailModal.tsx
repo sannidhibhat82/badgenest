@@ -251,33 +251,33 @@ export default function BadgeDetailModal({
               <Share2 className="mr-1.5 inline h-3.5 w-3.5" />
               Share & Add to Profile
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={shareToLinkedIn}
-                className="flex-col h-auto py-3 gap-1.5 hover:bg-[#0077B5]/5 hover:border-[#0077B5]/30 hover:text-[#0077B5]"
+                className="w-full justify-start gap-3 h-10 hover:bg-[#0077B5]/5 hover:border-[#0077B5]/30 hover:text-[#0077B5]"
               >
-                <Linkedin className="h-5 w-5" />
-                <span className="text-[11px]">Add to LinkedIn</span>
+                <Linkedin className="h-4 w-4 shrink-0" />
+                <span className="text-xs">Add to LinkedIn</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={shareToX}
-                className="flex-col h-auto py-3 gap-1.5 hover:bg-foreground/5 hover:border-foreground/30"
+                className="w-full justify-start gap-3 h-10 hover:bg-foreground/5 hover:border-foreground/30"
               >
-                <XIcon className="h-5 w-5" />
-                <span className="text-[11px]">Share on X</span>
+                <XIcon className="h-4 w-4 shrink-0" />
+                <span className="text-xs">Share on X</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={copyLink}
-                className="flex-col h-auto py-3 gap-1.5 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                className="w-full justify-start gap-3 h-10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
               >
-                <LinkIcon className="h-5 w-5" />
-                <span className="text-[11px]">Copy Link</span>
+                <LinkIcon className="h-4 w-4 shrink-0" />
+                <span className="text-xs">Copy Verification Link</span>
               </Button>
             </div>
           </div>
