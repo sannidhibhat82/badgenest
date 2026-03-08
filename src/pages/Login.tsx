@@ -50,7 +50,7 @@ export default function Login() {
               Earn, share, and verify digital badges that showcase your skills and achievements.
             </p>
           </div>
-          <p className="text-xs text-primary-foreground/40">© {new Date().getFullYear()} Evolve Careers</p>
+          <p className="text-xs text-primary-foreground/40">© {new Date().getFullYear()} BadgeNest</p>
         </div>
       </div>
 
