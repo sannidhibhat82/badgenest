@@ -20,6 +20,7 @@ import AuditLogPage from "./pages/admin/AuditLogPage";
 import Settings from "./pages/Settings";
 import Verify from "./pages/Verify";
 import PublicProfile from "./pages/PublicProfile";
+import ClaimBadge from "./pages/ClaimBadge";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
