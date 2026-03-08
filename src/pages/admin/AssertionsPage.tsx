@@ -478,6 +478,30 @@ export default function AssertionsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Send Invite */}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Send Badge Invite</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Send a claim link to someone who doesn't have an account yet. They'll sign up and claim the badge.</p>
+          <form onSubmit={(e) => { e.preventDefault(); inviteMutation.mutate(); }} className="space-y-4">
+            <div><Label>Email *</Label><Input type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} placeholder="recipient@example.com" required /></div>
+            <div>
+              <Label>Badge *</Label>
+              <Select value={inviteForm.badge_class_id} onValueChange={(v) => setInviteForm({ ...inviteForm, badge_class_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select badge" /></SelectTrigger>
+                <SelectContent>{badges.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Evidence URL</Label><Input value={inviteForm.evidence_url} onChange={(e) => setInviteForm({ ...inviteForm, evidence_url: e.target.value })} placeholder="https://…" /></div>
+            <DialogFooter>
+              <Button type="submit" disabled={inviteMutation.isPending || !inviteForm.email || !inviteForm.badge_class_id}>
+                {inviteMutation.isPending ? "Sending…" : "Create Invite Link"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
