@@ -45,7 +45,16 @@ export default function Verify() {
         .eq("user_id", assertion.recipient_id)
         .single();
 
-      return { assertion, badge, issuer, profile };
+      // Track view
+      await supabase.from("badge_views").insert({ assertion_id: assertionId! });
+
+      // Get view count
+      const { count } = await supabase
+        .from("badge_views")
+        .select("*", { count: "exact", head: true })
+        .eq("assertion_id", assertionId!);
+
+      return { assertion, badge, issuer, profile, viewCount: count ?? 0 };
     },
     enabled: !!assertionId,
   });
@@ -58,7 +67,7 @@ export default function Verify() {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading…</p></div>;
   if (error || !data) return <div className="min-h-screen flex items-center justify-center"><p className="text-destructive">Badge not found.</p></div>;
 
-  const { assertion, badge, issuer, profile } = data;
+  const { assertion, badge, issuer, profile, viewCount } = data;
   const status = getStatus(assertion);
   const StatusIcon = status.icon;
 
@@ -182,8 +191,11 @@ export default function Verify() {
             </Card>
           )}
 
-          {/* Share */}
-          <div className="flex justify-center">
+          {/* View count + Share */}
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-sm text-muted-foreground">
+              This badge has been verified <span className="font-semibold text-foreground">{viewCount}</span> time{viewCount !== 1 ? "s" : ""}
+            </p>
             <Button variant="outline" onClick={copyLink} className="gap-2">
               <Copy className="h-4 w-4" /> Copy Verification Link
             </Button>

@@ -18,6 +18,7 @@ import LearnersPage from "./pages/admin/LearnersPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import Settings from "./pages/Settings";
 import Verify from "./pages/Verify";
+import PublicProfile from "./pages/PublicProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/verify/:assertionId" element={<Verify />} />
+              <Route path="/profile/:userId" element={<PublicProfile />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />

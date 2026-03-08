@@ -4,11 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, ShieldCheck } from "lucide-react";
+import { LogOut, Settings, ShieldCheck, Share2 } from "lucide-react";
 import evolveLogo from "@/assets/evolve-logo.png";
+import NotificationCenter from "@/components/NotificationCenter";
 
 export default function LearnerLayout({ children }: { children: ReactNode }) {
-  const { profile, signOut, isAdmin } = useAuth();
+  const { user, profile, signOut, isAdmin } = useAuth();
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase()
     : "U";
@@ -20,6 +21,7 @@ export default function LearnerLayout({ children }: { children: ReactNode }) {
           <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto" />
         </Link>
         <div className="flex items-center gap-2">
+          <NotificationCenter />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
@@ -32,6 +34,9 @@ export default function LearnerLayout({ children }: { children: ReactNode }) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
                 <Link to="/dashboard/settings"><Settings className="mr-2 h-4 w-4" />Settings</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to={`/profile/${user?.id}`}><Share2 className="mr-2 h-4 w-4" />Public Profile</Link>
               </DropdownMenuItem>
               {isAdmin && (
                 <DropdownMenuItem asChild>
