@@ -109,6 +109,15 @@ export default function AssertionsPage() {
       }).select("id").single();
       if (error) throw error;
 
+      // Sign assertion (snapshot + HMAC signature)
+      try {
+        await supabase.functions.invoke("sign-assertion", {
+          body: { assertion_id: inserted.id },
+        });
+      } catch (signErr) {
+        console.error("Signing failed:", signErr);
+      }
+
       // Audit log
       const badgeName = badges.find((b) => b.id === form.badge_class_id)?.name || "Badge";
       const learner = learners.find((l) => l.user_id === recipientId);
