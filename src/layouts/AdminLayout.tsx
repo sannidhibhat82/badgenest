@@ -124,7 +124,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-64 bg-sidebar text-sidebar-foreground p-0">
                   <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
-                    <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto brightness-0 invert" />
+                    <img src={badgenestLogo} alt="BadgeNest" className="h-8 w-auto" />
                   </div>
                   <nav className="flex-1 px-3 py-5">
                     <NavItems pathname={location.pathname} onNavigate={() => setMobileOpen(false)} />
