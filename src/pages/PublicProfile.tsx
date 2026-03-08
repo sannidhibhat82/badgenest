@@ -33,12 +33,12 @@ export default function PublicProfile() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["public-profile", userId],
     queryFn: async () => {
-      const { data: profile, error: pErr } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, avatar_url, email")
-        .eq("user_id", userId!)
-        .single();
+      // Use RPC function to get profile without exposing email (works for anon users)
+      const { data: profileRows, error: pErr } = await supabase
+        .rpc("get_public_profile", { _user_id: userId! });
       if (pErr) throw pErr;
+      const profile = profileRows?.[0];
+      if (!profile) throw new Error("Profile not found");
 
       const { data: assertions } = await supabase
         .from("assertions")

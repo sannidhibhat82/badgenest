@@ -1,65 +1,93 @@
 
 
-## Production Readiness Assessment
+# Evolve Careers Digital Badge Platform
 
-Your app is functionally complete but has **2 critical security issues** and a few smaller items to address before going live.
-
----
-
-### Critical Security Fixes (Must Fix)
-
-**1. Badge invite tokens and emails are publicly exposed**
-The `badge_invites` table SELECT policy uses `USING (true)` with no filter, meaning anyone (even unauthenticated) can read every invite token and email. Additionally, any authenticated user can claim any invite via the UPDATE policy. This means:
-- An attacker can steal invite tokens and claim badges meant for others
-- All invited email addresses are leaked
-
-**Fix:** Tighten RLS policies:
-- SELECT: restrict to admin OR where `email` matches the authenticated user's email, or require token lookup at the row level
-- UPDATE: restrict to rows where the invite email matches the claiming user's email
-
-**2. User emails in profiles table are publicly readable**
-The `profiles` table has `USING (true)` on SELECT, exposing every user's email to anonymous visitors. This is a privacy/GDPR concern.
-
-**Fix:** Either:
-- Restrict SELECT to authenticated users only, OR
-- Create a public-safe view that excludes the email column
+## Overview
+A private digital badge platform where admins create/issue badges, learners view/share them, and anyone can verify badges via public URLs.
 
 ---
 
-### Security Warnings (Should Fix)
+## Phase 1: Backend Setup (Lovable Cloud / Supabase)
 
-**3. Leaked password protection is disabled**
-Enable leaked password protection in auth settings to prevent users from signing up with known compromised passwords.
+### Database Tables
+- **Issuers** — name, description, email, website, logo (supports multiple issuers)
+- **Badge Classes** — name, description, image, criteria, linked issuer, optional expiry
+- **Assertions** (issued badges) — links badge class to learner, issue date, evidence URL, expiry, revoked status
+- **User Roles** — separate role table (admin/learner) with RLS security
 
-**4. Issuer emails publicly readable**
-The `issuers` table exposes contact emails publicly. Lower risk since these are organizational emails, but worth restricting to authenticated users if not intended for public display.
-
----
-
-### Other Production Considerations
-
-**5. Email verification not enforced**
-Users can access the dashboard without verifying their email. The `ProtectedRoute` only checks if `user` exists, not email confirmation status.
-
-**6. No landing page**
-The `/` route redirects straight to login. If the published URL is shared externally, visitors see a login form with no context about the platform. Consider adding a simple landing page.
-
-**7. Rate limiting on public endpoints**
-The public API edge function and verification page have no rate limiting. The `badge_views` insert could be spammed despite the localStorage throttle (which is trivially bypassed).
+### Auth & Access Control
+- Supabase Auth for login/signup
+- Role-based access: admins manage everything, learners see only their own badges
+- Row-Level Security policies enforced at database level
 
 ---
 
-### Summary
+## Phase 2: Admin Dashboard (`/admin`)
 
-| Item | Severity | Effort |
-|---|---|---|
-| Fix badge_invites RLS (tokens/emails exposed) | Critical | Small (2 SQL migrations) |
-| Fix profiles SELECT policy (emails exposed) | Critical | Small (1 SQL migration) |
-| Enable leaked password protection | Warning | Trivial (auth config) |
-| Restrict issuer emails | Warning | Small (1 SQL migration) |
-| Enforce email verification | Recommended | Medium |
-| Add landing page | Nice to have | Medium |
-| Rate limiting | Nice to have | Medium |
+### Badge Management
+- Table view of all badge classes with create, edit, delete
+- Image upload for badge artwork
+- Set criteria and optional expiration period
 
-I recommend fixing items 1-4 before going to production. Items 5-7 can follow shortly after launch.
+### Badge Issuance
+- Form: select learner + badge class + evidence URL + issue date
+- **CSV bulk issuance**: upload CSV to issue badges to multiple learners at once
+
+### Issuer Management
+- CRUD for multiple issuers (name, logo, website, description)
+
+### Assertion Management
+- List all issued badges with filters
+- Revoke/un-revoke toggle with optional reason
+
+### Learner Management
+- View all learners and their badges
+- Filter by learner name or badge name
+
+### Analytics Section
+- Counts: badges issued, revoked, active
+- Recent activity log
+
+---
+
+## Phase 3: Learner Dashboard (`/dashboard`)
+
+### My Badges
+- Personalized greeting with profile picture
+- Grid/list of earned badges showing name, image, date, status (valid/expired/revoked)
+- Badge detail modal: full description, criteria, issuer info, download image
+
+### Sharing
+- Copy verification link
+- Share to LinkedIn (pre-filled URL)
+- Social share buttons (LinkedIn, Twitter)
+
+### Account Settings
+- Update name and profile picture
+- Logout
+
+---
+
+## Phase 4: Public Verification Page (`/verify/:assertionId`)
+
+- Displays badge info, issuer, learner, and issue date
+- Shows status: ✅ Valid, ⚠️ Expired, ❌ Revoked
+- JSON-LD structured data (Open Badges format) in page head
+- Share button for the verification URL
+
+---
+
+## Phase 5: Branding & Polish
+
+- Apply Evolve Careers colors, fonts, logo, and favicon (from uploaded assets)
+- Responsive design for mobile and desktop
+- Clean, professional UI throughout
+
+---
+
+## Not Included (per spec)
+- Email notifications (deferred)
+- Cryptographic signatures / baked PNGs
+- Full Open Badges spec compliance
+- LMS/LTI integrations
 

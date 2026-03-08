@@ -17,22 +17,28 @@ export default function ClaimBadge() {
   const { data: invite, isLoading, error } = useQuery({
     queryKey: ["badge-invite", token],
     queryFn: async () => {
+      // Use security definer RPC to look up invite by token (works for anon users)
       const { data, error } = await supabase
-        .from("badge_invites")
-        .select("*, badge_classes(name, description, image_url, issuer_id)")
-        .eq("invite_token", token!)
-        .single();
+        .rpc("get_invite_by_token", { _token: token! });
       if (error) throw error;
-
-      if (data.badge_classes) {
-        const { data: issuer } = await supabase
-          .from("issuers")
-          .select("name, logo_url")
-          .eq("id", (data.badge_classes as any).issuer_id)
-          .single();
-        return { ...data, issuer };
-      }
-      return data;
+      if (!data || data.length === 0) throw new Error("Invite not found");
+      const row = data[0];
+      return {
+        id: row.id,
+        badge_class_id: row.badge_class_id,
+        status: row.status,
+        email: row.masked_email,
+        evidence_url: row.evidence_url,
+        badge_classes: {
+          name: row.badge_name,
+          description: row.badge_description,
+          image_url: row.badge_image_url,
+        },
+        issuer: {
+          name: row.issuer_name,
+          logo_url: row.issuer_logo_url,
+        },
+      };
     },
     enabled: !!token,
   });

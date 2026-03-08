@@ -522,6 +522,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_invite_by_token: {
+        Args: { _token: string }
+        Returns: {
+          badge_class_id: string
+          badge_description: string
+          badge_image_url: string
+          badge_name: string
+          evidence_url: string
+          id: string
+          issuer_logo_url: string
+          issuer_name: string
+          masked_email: string
+          status: string
+        }[]
+      }
+      get_public_profile: {
+        Args: { _user_id: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
