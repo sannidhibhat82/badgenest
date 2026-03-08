@@ -1,78 +1,93 @@
 
 
-## Tag-Based Institutional Analytics
+# Evolve Careers Digital Badge Platform
 
-This is a great idea. Tags already exist in your system (tags, profile_tags tables), and assertions + badge_views give you the raw data. The key upgrade is segmenting all analytics by tag, so admins can answer questions like "How do students tagged 'Cohort 2025' perform vs 'Cohort 2024'?" or "Which department earns the most badges?"
+## Overview
+A private digital badge platform where admins create/issue badges, learners view/share them, and anyone can verify badges via public URLs.
 
-### What We'll Build
+---
 
-**1. Tag Filter on Analytics Page**
-- Dropdown at the top of the analytics page to filter all data by one or more tags
-- "All Learners" default, with tag options populated from the `tags` table
-- All KPI cards, charts, and tables re-compute based on selected tag(s)
+## Phase 1: Backend Setup (Lovable Cloud / Supabase)
 
-**2. New KPI Cards (Tag-Aware)**
-- **Acceptance Rate** — % of badge invites claimed vs sent (from `badge_invites` table, filtered by tagged users)
-- **Avg Badges per Learner** — total assertions / total learners in the tag group
-- **Verification Views** — total `badge_views` for learners in the tag group
-- **Share Rate** — proxy metric: % of earners whose verification page has been viewed (indicates sharing behavior)
+### Database Tables
+- **Issuers** — name, description, email, website, logo (supports multiple issuers)
+- **Badge Classes** — name, description, image, criteria, linked issuer, optional expiry
+- **Assertions** (issued badges) — links badge class to learner, issue date, evidence URL, expiry, revoked status
+- **User Roles** — separate role table (admin/learner) with RLS security
 
-**3. New Charts**
+### Auth & Access Control
+- Supabase Auth for login/signup
+- Role-based access: admins manage everything, learners see only their own badges
+- Row-Level Security policies enforced at database level
 
-- **Badge Acceptance Funnel** — Stacked bar: Invites Sent → Claimed → Active, per tag
-- **Tag Comparison Chart** — Grouped bar comparing badge counts across multiple tags side-by-side
-- **Skill Distribution Radar** — Radar/spider chart showing which badge categories each tag group earns most (uses `badge_categories` + `badge_class_categories`)
-- **Engagement Over Time** — Line chart showing badge views per month, filterable by tag
+---
 
-**4. Insights Cards (Computed Text)**
-- Auto-generated insight statements like:
-  - "87% of learners tagged 'Cohort 2025' earned at least one badge"
-  - "Learners with badge X have 3.2x more profile views"
-  - "Top performing tag: Engineering (avg 4.2 badges/learner)"
-- These are computed client-side from the fetched data, displayed as styled insight cards with icons
+## Phase 2: Admin Dashboard (`/admin`)
 
-**5. Export**
-- "Download Report" button that exports the current tag-filtered analytics as CSV (tag, learner count, badges issued, acceptance rate, views)
+### Badge Management
+- Table view of all badge classes with create, edit, delete
+- Image upload for badge artwork
+- Set criteria and optional expiration period
 
-### Technical Approach
+### Badge Issuance
+- Form: select learner + badge class + evidence URL + issue date
+- **CSV bulk issuance**: upload CSV to issue badges to multiple learners at once
 
-**No database changes needed.** All data already exists:
-- `tags` + `profile_tags` → tag-to-user mapping
-- `assertions` → badge issuance data
-- `badge_invites` → acceptance/claim tracking
-- `badge_views` → engagement/sharing proxy
-- `badge_class_categories` + `badge_categories` → skill distribution
+### Issuer Management
+- CRUD for multiple issuers (name, logo, website, description)
 
-**Data flow:**
-1. Fetch all tags and profile_tags
-2. When a tag is selected, filter `profile_tags` to get user IDs in that tag
-3. Filter assertions, invites, and views by those user IDs
-4. Compute metrics client-side and render charts
+### Assertion Management
+- List all issued badges with filters
+- Revoke/un-revoke toggle with optional reason
 
-**File changes:**
-- `src/pages/admin/AnalyticsPage.tsx` — Complete rewrite with tag filter, new KPIs, new charts, insights cards, and export button
+### Learner Management
+- View all learners and their badges
+- Filter by learner name or badge name
 
-**Dependencies:** No new packages. Uses existing `recharts` (BarChart, PieChart, RadarChart, LineChart) and UI components.
+### Analytics Section
+- Counts: badges issued, revoked, active
+- Recent activity log
 
-### UI Layout
+---
 
-```text
-┌─────────────────────────────────────────────┐
-│ Analytics          [Tag Filter ▼] [Export]   │
-├─────────────────────────────────────────────┤
-│ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐    │
-│ │Issued │ │Accept%│ │Avg/Lnr│ │Views  │    │
-│ └───────┘ └───────┘ └───────┘ └───────┘    │
-├──────────────────┬──────────────────────────┤
-│ Issuance Trend   │ Acceptance Funnel        │
-│ (line chart)     │ (stacked bar)            │
-├──────────────────┴──────────────────────────┤
-│ 💡 Insights                                 │
-│ "87% of Cohort 2025 earned a badge..."      │
-├──────────────────┬──────────────────────────┤
-│ Skill Radar      │ Tag Comparison           │
-├──────────────────┴──────────────────────────┤
-│ Badge Breakdown Table    │ Recent Activity   │
-└─────────────────────────────────────────────┘
-```
+## Phase 3: Learner Dashboard (`/dashboard`)
+
+### My Badges
+- Personalized greeting with profile picture
+- Grid/list of earned badges showing name, image, date, status (valid/expired/revoked)
+- Badge detail modal: full description, criteria, issuer info, download image
+
+### Sharing
+- Copy verification link
+- Share to LinkedIn (pre-filled URL)
+- Social share buttons (LinkedIn, Twitter)
+
+### Account Settings
+- Update name and profile picture
+- Logout
+
+---
+
+## Phase 4: Public Verification Page (`/verify/:assertionId`)
+
+- Displays badge info, issuer, learner, and issue date
+- Shows status: ✅ Valid, ⚠️ Expired, ❌ Revoked
+- JSON-LD structured data (Open Badges format) in page head
+- Share button for the verification URL
+
+---
+
+## Phase 5: Branding & Polish
+
+- Apply Evolve Careers colors, fonts, logo, and favicon (from uploaded assets)
+- Responsive design for mobile and desktop
+- Clean, professional UI throughout
+
+---
+
+## Not Included (per spec)
+- Email notifications (deferred)
+- Cryptographic signatures / baked PNGs
+- Full Open Badges spec compliance
+- LMS/LTI integrations
 
