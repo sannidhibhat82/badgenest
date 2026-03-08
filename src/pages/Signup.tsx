@@ -34,7 +34,7 @@ export default function Signup() {
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Account created!", description: "Check your email to confirm, or sign in if auto-confirmed." });
-      navigate("/login");
+      navigate(redirect || "/login");
     }
   };
 
