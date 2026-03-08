@@ -169,7 +169,7 @@ export default function BadgeDetailModal({
           </div>
         </div>
 
-        <div className="px-6 pb-6 space-y-5">
+        <div className="px-6 pb-6 space-y-5 min-w-0">
           {/* Details */}
           <div className="space-y-3 text-sm">
             <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
