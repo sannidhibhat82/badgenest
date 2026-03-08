@@ -151,8 +151,8 @@ export default function Verify() {
   return (
     <>
       <Helmet>
-        <title>{badge?.name ?? "Badge"} — Verification | Evolve Careers</title>
-        <meta name="description" content={`Verify the "${badge?.name}" digital badge issued by ${issuer?.name ?? "Evolve Careers"}.`} />
+        <title>{badge?.name ?? "Badge"} — Verification | BadgeNest</title>
+        <meta name="description" content={`Verify the "${badge?.name}" digital badge issued by ${issuer?.name ?? "BadgeNest"}.`} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
