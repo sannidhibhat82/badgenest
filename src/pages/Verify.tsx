@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { CheckCircle, XCircle, AlertTriangle, Copy, ExternalLink, Calendar, User, Building2, ShieldCheck, ShieldX, ChevronDown, Download, Code } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 import { useState, useEffect } from "react";
 
 function getStatus(assertion: any) {
@@ -151,8 +151,8 @@ export default function Verify() {
   return (
     <>
       <Helmet>
-        <title>{badge?.name ?? "Badge"} — Verification | Evolve Careers</title>
-        <meta name="description" content={`Verify the "${badge?.name}" digital badge issued by ${issuer?.name ?? "Evolve Careers"}.`} />
+        <title>{badge?.name ?? "Badge"} — Verification | BadgeNest</title>
+        <meta name="description" content={`Verify the "${badge?.name}" digital badge issued by ${issuer?.name ?? "BadgeNest"}.`} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
@@ -160,7 +160,7 @@ export default function Verify() {
         {/* Header */}
         <header className="border-b bg-card">
           <div className="container mx-auto flex items-center gap-3 px-4 py-4">
-            <img src={evolveLogo} alt="Evolve Careers" className="h-8" />
+            <img src={badgenestLogo} alt="BadgeNest" className="h-8" />
             <span className="font-semibold text-foreground">Badge Verification</span>
           </div>
         </header>

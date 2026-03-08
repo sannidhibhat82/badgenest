@@ -18,7 +18,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { format } from "date-fns";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 
 function getStatus(a: { revoked: boolean; expires_at: string | null }) {
   if (a.revoked) return { label: "Revoked", variant: "destructive" as const, icon: XCircle };
@@ -117,10 +117,10 @@ export default function PublicProfile() {
   return (
     <>
       <Helmet>
-        <title>{data.profile.full_name ?? "Learner"} — Badge Portfolio | Evolve Careers</title>
+        <title>{data.profile.full_name ?? "Learner"} — Badge Portfolio | BadgeNest</title>
         <meta
           name="description"
-          content={`View ${data.profile.full_name}'s ${activeCount} earned digital badges on Evolve Careers.`}
+          content={`View ${data.profile.full_name}'s ${activeCount} earned digital badges on BadgeNest.`}
         />
       </Helmet>
 
@@ -129,7 +129,7 @@ export default function PublicProfile() {
         <header className="sticky top-0 z-10 glass">
           <div className="container mx-auto flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2.5">
-              <img src={evolveLogo} alt="Evolve Careers" className="h-7" />
+              <img src={badgenestLogo} alt="BadgeNest" className="h-7" />
               <Separator orientation="vertical" className="h-5" />
               <span className="text-sm font-medium text-muted-foreground">Badge Portfolio</span>
             </div>
@@ -269,7 +269,7 @@ export default function PublicProfile() {
           <div className="container mx-auto max-w-4xl px-4 py-6 text-center">
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Shield className="h-3.5 w-3.5" />
-              <span>Credentials verified by Evolve Careers · Open Badges compliant</span>
+              <span>Credentials verified by BadgeNest · Open Badges compliant</span>
             </div>
           </div>
         </footer>

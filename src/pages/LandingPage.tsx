@@ -15,7 +15,7 @@ import {
   Lock,
   BarChart3,
 } from "lucide-react";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 
 const features = [
   {
@@ -61,10 +61,10 @@ export default function LandingPage() {
   return (
     <>
       <Helmet>
-        <title>Evolve Careers — Digital Badge Platform</title>
+        <title>BadgeNest — Digital Badge Platform</title>
         <meta
           name="description"
-          content="Issue, earn, and verify tamper-proof digital badges. Open Badges compliant credentialing platform by Evolve Careers."
+          content="Issue, earn, and verify tamper-proof digital badges. Open Badges compliant credentialing platform by BadgeNest."
         />
       </Helmet>
 
@@ -73,7 +73,7 @@ export default function LandingPage() {
         <nav className="sticky top-0 z-50 glass">
           <div className="container mx-auto flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2.5">
-              <img src={evolveLogo} alt="Evolve Careers" className="h-8" />
+              <img src={badgenestLogo} alt="BadgeNest" className="h-8" />
             </div>
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" asChild>
@@ -227,7 +227,7 @@ export default function LandingPage() {
                 Ready to start issuing badges?
               </h2>
               <p className="text-primary-foreground/70 max-w-lg mx-auto">
-                Join organizations using Evolve Careers to issue verifiable, portable digital credentials.
+                Join organizations using BadgeNest to issue verifiable, portable digital credentials.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                 <Button
@@ -258,10 +258,10 @@ export default function LandingPage() {
           <div className="container mx-auto max-w-5xl px-4 py-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <img src={evolveLogo} alt="Evolve Careers" className="h-6" />
+                <img src={badgenestLogo} alt="BadgeNest" className="h-6" />
                 <Separator orientation="vertical" className="h-4" />
                 <span className="text-xs text-muted-foreground">
-                  © {new Date().getFullYear()} Evolve Careers. All rights reserved.
+                  © {new Date().getFullYear()} BadgeNest. All rights reserved.
                 </span>
               </div>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">

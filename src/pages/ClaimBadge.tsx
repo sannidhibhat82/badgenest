@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Award, CheckCircle, Gift, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 
 export default function ClaimBadge() {
   const { token } = useParams<{ token: string }>();
@@ -104,7 +104,7 @@ export default function ClaimBadge() {
         <div className="h-1.5 bg-gradient-to-r from-primary via-secondary to-primary" />
 
         <CardHeader className="text-center pt-8 pb-4">
-          <img src={evolveLogo} alt="Evolve Careers" className="mx-auto mb-6 h-10 w-auto" />
+          <img src={badgenestLogo} alt="BadgeNest" className="mx-auto mb-6 h-10 w-auto" />
           <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
             {isClaimed ? <CheckCircle className="h-7 w-7 text-success" /> : <Gift className="h-7 w-7 text-primary animate-float" />}
           </div>

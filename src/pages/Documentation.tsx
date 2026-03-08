@@ -38,7 +38,7 @@ import {
   ArrowLeft,
   ExternalLink,
 } from "lucide-react";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 
 /* ------------------------------------------------------------------ */
 /*  Types & Data                                                      */
@@ -59,7 +59,7 @@ const sections: Section[] = [
   },
   {
     id: "why-evolve",
-    title: "Why Evolve Careers?",
+    title: "Why BadgeNest?",
     icon: <Zap className="h-4 w-4" />,
   },
   {
@@ -206,7 +206,7 @@ function TOC({
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-border">
         <Link to="/" className="flex items-center gap-2 mb-4">
-          <img src={evolveLogo} alt="Evolve Careers" className="h-7" />
+          <img src={badgenestLogo} alt="BadgeNest" className="h-7" />
           <span className="font-bold text-foreground text-sm">Docs</span>
         </Link>
         <div className="relative">
@@ -300,10 +300,10 @@ export default function Documentation() {
   return (
     <>
       <Helmet>
-        <title>Documentation — Evolve Careers Digital Badge Platform</title>
+        <title>Documentation — BadgeNest Digital Badge Platform</title>
         <meta
           name="description"
-          content="Complete documentation for the Evolve Careers Digital Badge Platform. Features, architecture, API reference, security, and competitive comparison."
+          content="Complete documentation for the BadgeNest Digital Badge Platform. Features, architecture, API reference, security, and competitive comparison."
         />
       </Helmet>
 
@@ -331,7 +331,7 @@ export default function Documentation() {
               />
             </SheetContent>
           </Sheet>
-          <img src={evolveLogo} alt="Evolve Careers" className="h-6" />
+          <img src={badgenestLogo} alt="BadgeNest" className="h-6" />
           <span className="font-semibold text-foreground text-sm">
             Documentation
           </span>
@@ -354,9 +354,9 @@ export default function Documentation() {
             {/* ---- OVERVIEW ---- */}
             <SectionHeading id="overview">Platform Overview</SectionHeading>
             <P>
-              Evolve Careers is a <strong>private-label digital badge platform</strong> built for
+              BadgeNest is a <strong>private-label digital badge platform</strong> built for
               organisations that want full control over how they issue, manage, and verify professional
-              credentials. Unlike SaaS marketplaces that lock you into their ecosystem, Evolve Careers
+              credentials. Unlike SaaS marketplaces that lock you into their ecosystem, BadgeNest
               gives you complete data ownership, white-label branding, and cryptographic verification —
               all on modern, open-source infrastructure.
             </P>
@@ -385,10 +385,10 @@ export default function Documentation() {
             </div>
 
             {/* ---- WHY EVOLVE ---- */}
-            <SectionHeading id="why-evolve">Why Evolve Careers?</SectionHeading>
+            <SectionHeading id="why-evolve">Why BadgeNest?</SectionHeading>
             <P>
               Credential platforms like Credly, Accredible, and Badgr have made digital badges
-              mainstream — but they come with trade-offs. Here's why organisations choose Evolve Careers
+              mainstream — but they come with trade-offs. Here's why organisations choose BadgeNest
               instead:
             </P>
             <div className="grid sm:grid-cols-2 gap-4 my-6">
@@ -436,7 +436,7 @@ export default function Documentation() {
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold min-w-[180px]">Feature</TableHead>
                     <TableHead className="text-center font-semibold">
-                      <span className="text-primary">Evolve Careers</span>
+                      <span className="text-primary">BadgeNest</span>
                     </TableHead>
                     <TableHead className="text-center font-semibold">Credly</TableHead>
                     <TableHead className="text-center font-semibold">Accredible</TableHead>
@@ -475,7 +475,7 @@ export default function Documentation() {
               </Table>
             </div>
             <P>
-              <strong>Key takeaway:</strong> Evolve Careers is the only platform that combines full
+              <strong>Key takeaway:</strong> BadgeNest is the only platform that combines full
               data ownership, cryptographic integrity, white-label branding, and transparent pricing in
               a single package.
             </P>
@@ -744,8 +744,8 @@ export default function Documentation() {
             {/* Footer */}
             <div className="mt-16 pt-8 border-t border-border text-center">
               <P>
-                Built with ❤️ by Evolve Careers. Questions?{" "}
-                <a href="mailto:support@evolvecareers.com" className="text-primary hover:underline">
+                Built with ❤️ by BadgeNest. Questions?{" "}
+                <a href="mailto:support@badgenest.com" className="text-primary hover:underline">
                   Get in touch
                 </a>
                 .

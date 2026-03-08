@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 import { Award, ArrowRight } from "lucide-react";
 
 export default function Signup() {
@@ -51,7 +51,7 @@ export default function Signup() {
         <div className="absolute top-1/3 -right-20 w-96 h-96 rounded-full bg-primary-foreground/5 blur-3xl" />
         <div className="absolute bottom-1/3 left-10 w-72 h-72 rounded-full bg-primary-foreground/10 blur-3xl" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
-          <img src={evolveLogo} alt="Evolve Careers" className="h-10 w-auto brightness-0 invert" />
+          <img src={badgenestLogo} alt="BadgeNest" className="h-10 w-auto" />
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary-foreground/10 px-4 py-2 text-sm font-medium backdrop-blur-sm">
               <Award className="h-4 w-4" />
@@ -64,7 +64,7 @@ export default function Signup() {
               Join thousands of learners showcasing verified skills with portable digital badges.
             </p>
           </div>
-          <p className="text-xs text-primary-foreground/40">© {new Date().getFullYear()} Evolve Careers</p>
+          <p className="text-xs text-primary-foreground/40">© {new Date().getFullYear()} BadgeNest</p>
         </div>
       </div>
 
@@ -72,7 +72,7 @@ export default function Signup() {
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-background">
         <div className="w-full max-w-sm animate-slide-up">
           <div className="mb-8 lg:hidden">
-            <img src={evolveLogo} alt="Evolve Careers" className="h-10 w-auto" />
+            <img src={badgenestLogo} alt="BadgeNest" className="h-10 w-auto" />
           </div>
 
           <div className="space-y-2 mb-8">

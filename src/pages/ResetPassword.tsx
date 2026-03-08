@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 import { CheckCircle } from "lucide-react";
 
 export default function ResetPassword() {
@@ -44,7 +44,7 @@ export default function ResetPassword() {
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="w-full max-w-sm animate-slide-up">
         <div className="mb-8">
-          <img src={evolveLogo} alt="Evolve Careers" className="h-10 w-auto" />
+          <img src={badgenestLogo} alt="BadgeNest" className="h-10 w-auto" />
         </div>
 
         <div className="space-y-2 mb-8">

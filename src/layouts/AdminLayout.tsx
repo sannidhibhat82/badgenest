@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LayoutDashboard, Award, Building2, Users, BarChart3, LogOut, Settings, Shield, Menu, FileText, Key, Webhook, ChevronDown } from "lucide-react";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       {/* Desktop Sidebar */}
       <aside className="hidden w-64 flex-col bg-sidebar text-sidebar-foreground lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
-          <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto brightness-0 invert" />
+          <img src={badgenestLogo} alt="BadgeNest" className="h-8 w-auto" />
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-5">
           <NavItems pathname={location.pathname} />
@@ -124,14 +124,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-64 bg-sidebar text-sidebar-foreground p-0">
                   <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
-                    <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto brightness-0 invert" />
+                    <img src={badgenestLogo} alt="BadgeNest" className="h-8 w-auto" />
                   </div>
                   <nav className="flex-1 px-3 py-5">
                     <NavItems pathname={location.pathname} onNavigate={() => setMobileOpen(false)} />
                   </nav>
                 </SheetContent>
               </Sheet>
-              <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto" />
+              <img src={badgenestLogo} alt="BadgeNest" className="h-8 w-auto" />
             </div>
             <div className="hidden lg:block" />
             <div className="flex items-center gap-2">

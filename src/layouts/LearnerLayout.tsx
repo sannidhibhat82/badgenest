@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LogOut, Settings, ShieldCheck, Share2, ChevronDown } from "lucide-react";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 import NotificationCenter from "@/components/NotificationCenter";
 
 export default function LearnerLayout({ children }: { children: ReactNode }) {
@@ -20,7 +20,7 @@ export default function LearnerLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 glass">
         <div className="flex h-16 items-center justify-between px-6">
           <Link to="/dashboard" className="flex items-center gap-2 group">
-            <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto transition-transform group-hover:scale-105" />
+            <img src={badgenestLogo} alt="BadgeNest" className="h-8 w-auto transition-transform group-hover:scale-105" />
           </Link>
           <div className="flex items-center gap-3">
             <NotificationCenter />
