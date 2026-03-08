@@ -117,10 +117,10 @@ export default function PublicProfile() {
   return (
     <>
       <Helmet>
-        <title>{data.profile.full_name ?? "Learner"} — Badge Portfolio | Evolve Careers</title>
+        <title>{data.profile.full_name ?? "Learner"} — Badge Portfolio | BadgeNest</title>
         <meta
           name="description"
-          content={`View ${data.profile.full_name}'s ${activeCount} earned digital badges on Evolve Careers.`}
+          content={`View ${data.profile.full_name}'s ${activeCount} earned digital badges on BadgeNest.`}
         />
       </Helmet>
 
