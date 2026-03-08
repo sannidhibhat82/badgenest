@@ -26,6 +26,7 @@ import Settings from "./pages/Settings";
 import Verify from "./pages/Verify";
 import PublicProfile from "./pages/PublicProfile";
 import ClaimBadge from "./pages/ClaimBadge";
+import Documentation from "./pages/Documentation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/verify/:assertionId" element={<Verify />} />
               <Route path="/profile/:userId" element={<PublicProfile />} />
               <Route path="/claim/:token" element={<ClaimBadge />} />
+              <Route path="/docs" element={<Documentation />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
