@@ -206,7 +206,7 @@ function TOC({
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-border">
         <Link to="/" className="flex items-center gap-2 mb-4">
-          <img src={evolveLogo} alt="Evolve Careers" className="h-7" />
+          <img src={badgenestLogo} alt="BadgeNest" className="h-7" />
           <span className="font-bold text-foreground text-sm">Docs</span>
         </Link>
         <div className="relative">
