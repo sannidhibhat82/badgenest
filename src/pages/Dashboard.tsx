@@ -61,6 +61,16 @@ export default function LearnerDashboard() {
         .select("id, name, logo_url")
         .in("id", issuerIds);
 
+      // Fetch view counts for user's assertions
+      const assertionIds = data.map((a) => a.id);
+      const { data: viewData } = assertionIds.length
+        ? await supabase.from("badge_views").select("assertion_id").in("assertion_id", assertionIds)
+        : { data: [] };
+      const viewMap: Record<string, number> = {};
+      for (const v of viewData ?? []) {
+        viewMap[v.assertion_id] = (viewMap[v.assertion_id] || 0) + 1;
+      }
+
       const issuerMap = Object.fromEntries((issuers ?? []).map((i) => [i.id, i]));
       const badgeMap = Object.fromEntries(
         (badges ?? []).map((b) => [
@@ -71,6 +81,7 @@ export default function LearnerDashboard() {
 
       return data.map((a) => ({
         ...a,
+        views: viewMap[a.id] || 0,
         badge_class: badgeMap[a.badge_class_id] ?? {
           id: a.badge_class_id,
           name: "Unknown Badge",
@@ -79,7 +90,7 @@ export default function LearnerDashboard() {
           criteria: null,
           issuer: { name: "Unknown", logo_url: null },
         },
-      })) as BadgeAssertion[];
+      })) as (BadgeAssertion & { views: number })[];
     },
     enabled: !!user,
   });

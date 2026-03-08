@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Award } from "lucide-react";
+import { Plus, Pencil, Trash2, Award, Tags } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type BadgeClass = Tables<"badge_classes">;
@@ -28,6 +28,10 @@ export default function BadgesPage() {
   const [editing, setEditing] = useState<BadgeClass | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [catDialogOpen, setCatDialogOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatColor, setNewCatColor] = useState("#6366f1");
 
   const { data: badges = [], isLoading } = useQuery({
     queryKey: ["badge_classes"],
@@ -38,16 +42,13 @@ export default function BadgesPage() {
     },
   });
 
-  // Fetch issuance counts
   const { data: issuanceCounts = {} } = useQuery({
     queryKey: ["badge-issuance-counts"],
     queryFn: async () => {
       const { data, error } = await supabase.from("assertions").select("badge_class_id");
       if (error) throw error;
       const counts: Record<string, number> = {};
-      for (const a of data ?? []) {
-        counts[a.badge_class_id] = (counts[a.badge_class_id] || 0) + 1;
-      }
+      for (const a of data ?? []) counts[a.badge_class_id] = (counts[a.badge_class_id] || 0) + 1;
       return counts;
     },
   });
@@ -60,6 +61,34 @@ export default function BadgesPage() {
       return data as Pick<Issuer, "id" | "name">[];
     },
   });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["badge_categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("badge_categories").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: badgeCategoryLinks = [] } = useQuery({
+    queryKey: ["badge_class_categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("badge_class_categories").select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Map badge_id -> category names
+  const badgeCatMap: Record<string, string[]> = {};
+  for (const link of badgeCategoryLinks) {
+    const cat = categories.find((c) => c.id === link.category_id);
+    if (cat) {
+      badgeCatMap[link.badge_class_id] = badgeCatMap[link.badge_class_id] || [];
+      badgeCatMap[link.badge_class_id].push(cat.name);
+    }
+  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -82,15 +111,31 @@ export default function BadgesPage() {
         image_url,
       };
 
+      let badgeId: string;
       if (editing) {
         const { error } = await supabase.from("badge_classes").update(payload).eq("id", editing.id);
         if (error) throw error;
+        badgeId = editing.id;
       } else {
-        const { error } = await supabase.from("badge_classes").insert(payload);
+        const { data, error } = await supabase.from("badge_classes").insert(payload).select("id").single();
         if (error) throw error;
+        badgeId = data.id;
+      }
+
+      // Update categories
+      await supabase.from("badge_class_categories").delete().eq("badge_class_id", badgeId);
+      if (selectedCategories.length > 0) {
+        await supabase.from("badge_class_categories").insert(
+          selectedCategories.map((catId) => ({ badge_class_id: badgeId, category_id: catId }))
+        );
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["badge_classes"] }); setDialogOpen(false); toast({ title: editing ? "Badge updated" : "Badge created" }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["badge_classes"] });
+      qc.invalidateQueries({ queryKey: ["badge_class_categories"] });
+      setDialogOpen(false);
+      toast({ title: editing ? "Badge updated" : "Badge created" });
+    },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
@@ -100,12 +145,41 @@ export default function BadgesPage() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setImageFile(null); setDialogOpen(true); };
+  const createCatMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.from("badge_categories").insert({ name: newCatName, color: newCatColor }).select("id").single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["badge_categories"] });
+      setSelectedCategories([...selectedCategories, data.id]);
+      setNewCatName("");
+      setCatDialogOpen(false);
+      toast({ title: "Category created" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setImageFile(null);
+    setSelectedCategories([]);
+    setDialogOpen(true);
+  };
+
   const openEdit = (b: BadgeClass) => {
     setEditing(b);
     setForm({ name: b.name, description: b.description ?? "", criteria: b.criteria ?? "", issuer_id: b.issuer_id, expiry_days: b.expiry_days?.toString() ?? "" });
     setImageFile(null);
+    const linked = badgeCategoryLinks.filter((l) => l.badge_class_id === b.id).map((l) => l.category_id);
+    setSelectedCategories(linked);
     setDialogOpen(true);
+  };
+
+  const toggleCategory = (catId: string) => {
+    setSelectedCategories((prev) => prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]);
   };
 
   return (
@@ -126,6 +200,7 @@ export default function BadgesPage() {
                 <TableHead>Image</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead className="hidden md:table-cell">Issuer</TableHead>
+                <TableHead className="hidden md:table-cell">Categories</TableHead>
                 <TableHead className="hidden md:table-cell">Expiry</TableHead>
                 <TableHead>Issued</TableHead>
                 <TableHead className="w-24">Actions</TableHead>
@@ -133,14 +208,22 @@ export default function BadgesPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
               ) : badges.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No badges yet.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No badges yet.</TableCell></TableRow>
               ) : badges.map((b: any) => (
                 <TableRow key={b.id}>
                   <TableCell>{b.image_url ? <img src={b.image_url} alt="" className="h-10 w-10 rounded object-contain" /> : <Award className="h-10 w-10 text-muted-foreground" />}</TableCell>
                   <TableCell className="font-medium">{b.name}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{b.issuers?.name ?? "—"}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <div className="flex flex-wrap gap-1">
+                      {(badgeCatMap[b.id] || []).map((name) => (
+                        <Badge key={name} variant="outline" className="text-[10px]">{name}</Badge>
+                      ))}
+                      {!(badgeCatMap[b.id]?.length) && <span className="text-muted-foreground text-xs">—</span>}
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{b.expiry_days ? `${b.expiry_days} days` : "Never"}</TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="text-xs">{issuanceCounts[b.id] || 0}</Badge>
@@ -158,8 +241,9 @@ export default function BadgesPage() {
         </CardContent>
       </Card>
 
+      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "Edit Badge" : "Create Badge"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-4">
             <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
@@ -172,9 +256,46 @@ export default function BadgesPage() {
                 <SelectContent>{issuers.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Categories</Label>
+                <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setCatDialogOpen(true)}>
+                  <Plus className="h-3 w-3" /> New Category
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => toggleCategory(cat.id)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      selectedCategories.includes(cat.id)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted text-muted-foreground border-border hover:bg-accent"
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+                {categories.length === 0 && <p className="text-xs text-muted-foreground">No categories yet</p>}
+              </div>
+            </div>
             <div><Label>Expiry (days)</Label><Input type="number" value={form.expiry_days} onChange={(e) => setForm({ ...form, expiry_days: e.target.value })} placeholder="Leave empty for no expiry" /></div>
             <div><Label>Badge Image</Label><Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} /></div>
             <DialogFooter><Button type="submit" disabled={saveMutation.isPending || !form.issuer_id}>{saveMutation.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Category Dialog */}
+      <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>New Category</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); createCatMutation.mutate(); }} className="space-y-4">
+            <div><Label>Name *</Label><Input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} required /></div>
+            <div><Label>Color</Label><Input type="color" value={newCatColor} onChange={(e) => setNewCatColor(e.target.value)} className="h-10 w-20" /></div>
+            <DialogFooter><Button type="submit" disabled={createCatMutation.isPending || !newCatName.trim()}>{createCatMutation.isPending ? "Creating…" : "Create"}</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
