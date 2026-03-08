@@ -10,12 +10,22 @@ import { CheckCircle, XCircle, AlertTriangle, Copy, ExternalLink, Calendar, User
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import evolveLogo from "@/assets/evolve-logo.png";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function getStatus(assertion: any) {
   if (assertion.revoked) return { label: "Revoked", icon: XCircle, variant: "destructive" as const, color: "text-destructive" };
   if (assertion.expires_at && new Date(assertion.expires_at) < new Date()) return { label: "Expired", icon: AlertTriangle, variant: "secondary" as const, color: "text-yellow-600" };
   return { label: "Valid", icon: CheckCircle, variant: "default" as const, color: "text-green-600" };
+}
+
+// Deduplicate badge views using localStorage (1 view per assertion per hour)
+function shouldTrackView(assertionId: string): boolean {
+  const key = `badge_view_${assertionId}`;
+  const lastView = localStorage.getItem(key);
+  const now = Date.now();
+  if (lastView && now - parseInt(lastView, 10) < 60 * 60 * 1000) return false;
+  localStorage.setItem(key, String(now));
+  return true;
 }
 
 export default function Verify() {
@@ -32,61 +42,48 @@ export default function Verify() {
         .single();
       if (error) throw error;
 
-      // Use snapshot if available, otherwise fall back to live data
       const snapshot = assertion.snapshot_json as any;
-
       let badge = snapshot?.badge ?? null;
       let issuer = snapshot?.issuer ?? null;
       let recipient = snapshot?.recipient ?? null;
 
-      // Fall back to live data if no snapshot
-      if (!badge) {
-        const { data: b } = await supabase
-          .from("badge_classes")
-          .select("*")
-          .eq("id", assertion.badge_class_id)
-          .single();
-        badge = b;
-      }
+      // Parallelize all fallback fetches + view count
+      const needBadge = !badge;
+      const needRecipient = !recipient;
 
+      const [badgeRes, recipientRes, countRes] = await Promise.all([
+        needBadge
+          ? supabase.from("badge_classes").select("*, issuers(*)").eq("id", assertion.badge_class_id).single()
+          : Promise.resolve(null),
+        needRecipient
+          ? supabase.from("profiles").select("full_name, avatar_url").eq("user_id", assertion.recipient_id).single()
+          : Promise.resolve(null),
+        supabase.from("badge_views").select("*", { count: "exact", head: true }).eq("assertion_id", assertionId!),
+      ]);
+
+      if (needBadge && badgeRes?.data) {
+        badge = badgeRes.data;
+        issuer = (badgeRes.data as any).issuers ?? null;
+      }
       if (!issuer && badge?.issuer_id) {
         const { data: i } = await supabase.from("issuers").select("*").eq("id", badge.issuer_id).single();
         issuer = i;
-      } else if (!issuer && !snapshot) {
-        // Try to get issuer from live badge data
-        if (badge) {
-          const { data: liveB } = await supabase.from("badge_classes").select("issuer_id").eq("id", assertion.badge_class_id).single();
-          if (liveB) {
-            const { data: i } = await supabase.from("issuers").select("*").eq("id", liveB.issuer_id).single();
-            issuer = i;
-          }
-        }
+      }
+      if (needRecipient && recipientRes?.data) {
+        recipient = { full_name: (recipientRes.data as any).full_name };
       }
 
-      if (!recipient) {
-        const { data: p } = await supabase
-          .from("profiles")
-          .select("full_name, avatar_url")
-          .eq("user_id", assertion.recipient_id)
-          .single();
-        recipient = p ? { full_name: p.full_name } : null;
+      // Track view (deduplicated)
+      if (shouldTrackView(assertionId!)) {
+        supabase.from("badge_views").insert({ assertion_id: assertionId! }).then(() => {});
       }
-
-      // Track view
-      await supabase.from("badge_views").insert({ assertion_id: assertionId! });
-
-      // Get view count
-      const { count } = await supabase
-        .from("badge_views")
-        .select("*", { count: "exact", head: true })
-        .eq("assertion_id", assertionId!);
 
       return {
         assertion,
         badge,
         issuer,
         recipient,
-        viewCount: count ?? 0,
+        viewCount: (countRes.count ?? 0),
         hasSig: !!assertion.signature,
         hasSnapshot: !!snapshot,
       };

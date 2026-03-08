@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -48,23 +48,20 @@ export default function LearnerDashboard() {
       if (error) throw error;
 
       const badgeClassIds = [...new Set(data.map((a) => a.badge_class_id))];
-      const { data: badges } = await supabase
-        .from("badge_classes")
-        .select("id, name, description, image_url, criteria, issuer_id")
-        .in("id", badgeClassIds);
+      
+      // Parallelize badge, issuer, and views fetches
+      const [{ data: badges }, viewResult] = await Promise.all([
+        supabase.from("badge_classes").select("id, name, description, image_url, criteria, issuer_id").in("id", badgeClassIds),
+        data.length > 0
+          ? supabase.from("badge_views").select("assertion_id").in("assertion_id", data.map((a) => a.id))
+          : Promise.resolve({ data: [] }),
+      ]);
 
       const issuerIds = [...new Set((badges ?? []).map((b) => b.issuer_id))];
-      const { data: issuers } = await supabase
-        .from("issuers")
-        .select("id, name, logo_url")
-        .in("id", issuerIds);
+      const { data: issuers } = await supabase.from("issuers").select("id, name, logo_url").in("id", issuerIds);
 
-      const assertionIds = data.map((a) => a.id);
-      const { data: viewData } = assertionIds.length
-        ? await supabase.from("badge_views").select("assertion_id").in("assertion_id", assertionIds)
-        : { data: [] };
       const viewMap: Record<string, number> = {};
-      for (const v of viewData ?? []) {
+      for (const v of (viewResult as any).data ?? []) {
         viewMap[v.assertion_id] = (viewMap[v.assertion_id] || 0) + 1;
       }
 
@@ -92,21 +89,27 @@ export default function LearnerDashboard() {
     enabled: !!user,
   });
 
-  const filtered = (assertions ?? []).filter((a) => {
-    if (search && !a.badge_class.name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filter === "active") return !a.revoked && !(a.expires_at && new Date(a.expires_at) < new Date());
-    if (filter === "expired") return !a.revoked && a.expires_at && new Date(a.expires_at) < new Date();
-    if (filter === "revoked") return a.revoked;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    return (assertions ?? []).filter((a) => {
+      if (search && !a.badge_class.name.toLowerCase().includes(search.toLowerCase())) return false;
+      if (filter === "active") return !a.revoked && !(a.expires_at && new Date(a.expires_at) < new Date());
+      if (filter === "expired") return !a.revoked && a.expires_at && new Date(a.expires_at) < new Date();
+      if (filter === "revoked") return a.revoked;
+      return true;
+    });
+  }, [assertions, search, filter]);
 
-  const totalViews = (assertions ?? []).reduce((sum, a: any) => sum + (a.views || 0), 0);
-  const stats = {
-    total: (assertions ?? []).length,
-    active: (assertions ?? []).filter((a) => !a.revoked && !(a.expires_at && new Date(a.expires_at) < new Date())).length,
-    expired: (assertions ?? []).filter((a) => !a.revoked && a.expires_at && new Date(a.expires_at) < new Date()).length,
-    revoked: (assertions ?? []).filter((a) => a.revoked).length,
-  };
+  const { totalViews, stats } = useMemo(() => {
+    const all = assertions ?? [];
+    const totalViews = all.reduce((sum, a: any) => sum + (a.views || 0), 0);
+    const stats = {
+      total: all.length,
+      active: all.filter((a) => !a.revoked && !(a.expires_at && new Date(a.expires_at) < new Date())).length,
+      expired: all.filter((a) => !a.revoked && a.expires_at && new Date(a.expires_at) < new Date()).length,
+      revoked: all.filter((a) => a.revoked).length,
+    };
+    return { totalViews, stats };
+  }, [assertions]);
 
   const statCards = [
     { label: "Total Badges", value: stats.total, icon: Award, gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
