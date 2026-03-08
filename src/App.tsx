@@ -18,6 +18,7 @@ import LearnersPage from "./pages/admin/LearnersPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import Settings from "./pages/Settings";
 import Verify from "./pages/Verify";
+import PublicProfile from "./pages/PublicProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
