@@ -17,6 +17,8 @@ import AssertionsPage from "./pages/admin/AssertionsPage";
 import LearnersPage from "./pages/admin/LearnersPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import AuditLogPage from "./pages/admin/AuditLogPage";
+import ApiKeysPage from "./pages/admin/ApiKeysPage";
+import WebhooksPage from "./pages/admin/WebhooksPage";
 import Settings from "./pages/Settings";
 import Verify from "./pages/Verify";
 import PublicProfile from "./pages/PublicProfile";
