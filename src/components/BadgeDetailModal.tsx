@@ -135,7 +135,7 @@ export default function BadgeDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto p-0">
         <DialogHeader className="sr-only">
           <DialogTitle>Badge Details</DialogTitle>
         </DialogHeader>
@@ -144,11 +144,16 @@ export default function BadgeDetailModal({
         <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 pt-8 pb-6">
           <div className="flex flex-col items-center text-center">
             {assertion.badge_class.image_url ? (
-              <div className="rounded-2xl bg-card p-2 shadow-lg ring-1 ring-border">
+              <div className="rounded-2xl bg-card p-3 shadow-lg ring-1 ring-border">
                 <img
                   src={assertion.badge_class.image_url}
                   alt={assertion.badge_class.name}
-                  className="h-28 w-28 rounded-xl object-contain"
+                  crossOrigin="anonymous"
+                  className="h-24 w-24 sm:h-28 sm:w-28 rounded-xl object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = '<div class="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg></div>';
+                  }}
                 />
               </div>
             ) : (
@@ -246,33 +251,33 @@ export default function BadgeDetailModal({
               <Share2 className="mr-1.5 inline h-3.5 w-3.5" />
               Share & Add to Profile
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={shareToLinkedIn}
-                className="flex-col h-auto py-3 gap-1.5 hover:bg-[#0077B5]/5 hover:border-[#0077B5]/30 hover:text-[#0077B5]"
+                className="w-full justify-start gap-3 h-10 hover:bg-[#0077B5]/5 hover:border-[#0077B5]/30 hover:text-[#0077B5]"
               >
-                <Linkedin className="h-5 w-5" />
-                <span className="text-[11px]">Add to LinkedIn</span>
+                <Linkedin className="h-4 w-4 shrink-0" />
+                <span className="text-xs">Add to LinkedIn</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={shareToX}
-                className="flex-col h-auto py-3 gap-1.5 hover:bg-foreground/5 hover:border-foreground/30"
+                className="w-full justify-start gap-3 h-10 hover:bg-foreground/5 hover:border-foreground/30"
               >
-                <XIcon className="h-5 w-5" />
-                <span className="text-[11px]">Share on X</span>
+                <XIcon className="h-4 w-4 shrink-0" />
+                <span className="text-xs">Share on X</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={copyLink}
-                className="flex-col h-auto py-3 gap-1.5 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
+                className="w-full justify-start gap-3 h-10 hover:bg-primary/5 hover:border-primary/30 hover:text-primary"
               >
-                <LinkIcon className="h-5 w-5" />
-                <span className="text-[11px]">Copy Link</span>
+                <LinkIcon className="h-4 w-4 shrink-0" />
+                <span className="text-xs">Copy Verification Link</span>
               </Button>
             </div>
           </div>
