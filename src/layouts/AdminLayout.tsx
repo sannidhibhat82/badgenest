@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       {/* Desktop Sidebar */}
       <aside className="hidden w-64 flex-col bg-sidebar text-sidebar-foreground lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
-          <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto brightness-0 invert" />
+          <img src={badgenestLogo} alt="BadgeNest" className="h-8 w-auto" />
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-5">
           <NavItems pathname={location.pathname} />
