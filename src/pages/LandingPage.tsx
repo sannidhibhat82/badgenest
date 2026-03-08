@@ -258,10 +258,10 @@ export default function LandingPage() {
           <div className="container mx-auto max-w-5xl px-4 py-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
-                <img src={evolveLogo} alt="Evolve Careers" className="h-6" />
+                <img src={badgenestLogo} alt="BadgeNest" className="h-6" />
                 <Separator orientation="vertical" className="h-4" />
                 <span className="text-xs text-muted-foreground">
-                  © {new Date().getFullYear()} Evolve Careers. All rights reserved.
+                  © {new Date().getFullYear()} BadgeNest. All rights reserved.
                 </span>
               </div>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">

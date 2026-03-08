@@ -59,7 +59,7 @@ export default function Login() {
         <div className="w-full max-w-sm animate-slide-up">
           {/* Mobile logo */}
           <div className="mb-8 lg:hidden">
-            <img src={evolveLogo} alt="Evolve Careers" className="h-10 w-auto" />
+            <img src={badgenestLogo} alt="BadgeNest" className="h-10 w-auto" />
           </div>
 
           <div className="space-y-2 mb-8">

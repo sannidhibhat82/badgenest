@@ -131,7 +131,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                   </nav>
                 </SheetContent>
               </Sheet>
-              <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto" />
+              <img src={badgenestLogo} alt="BadgeNest" className="h-8 w-auto" />
             </div>
             <div className="hidden lg:block" />
             <div className="flex items-center gap-2">

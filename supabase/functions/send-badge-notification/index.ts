@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
                   Log in to your dashboard to view your badges.
                 </p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-                <p style="color: #999; font-size: 12px;">Evolve Careers Badge Platform</p>
+                <p style="color: #999; font-size: 12px;">BadgeNest Badge Platform</p>
               </div>
             `,
             purpose: "transactional",

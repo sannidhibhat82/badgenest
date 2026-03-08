@@ -32,7 +32,7 @@ export default function ForgotPassword() {
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="w-full max-w-sm animate-slide-up">
         <div className="mb-8">
-          <img src={evolveLogo} alt="Evolve Careers" className="h-10 w-auto" />
+          <img src={badgenestLogo} alt="BadgeNest" className="h-10 w-auto" />
         </div>
 
         {sent ? (

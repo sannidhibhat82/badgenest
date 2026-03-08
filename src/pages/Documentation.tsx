@@ -744,8 +744,8 @@ export default function Documentation() {
             {/* Footer */}
             <div className="mt-16 pt-8 border-t border-border text-center">
               <P>
-                Built with ❤️ by Evolve Careers. Questions?{" "}
-                <a href="mailto:support@evolvecareers.com" className="text-primary hover:underline">
+                Built with ❤️ by BadgeNest. Questions?{" "}
+                <a href="mailto:support@badgenest.com" className="text-primary hover:underline">
                   Get in touch
                 </a>
                 .

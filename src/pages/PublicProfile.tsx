@@ -269,7 +269,7 @@ export default function PublicProfile() {
           <div className="container mx-auto max-w-4xl px-4 py-6 text-center">
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Shield className="h-3.5 w-3.5" />
-              <span>Credentials verified by Evolve Careers · Open Badges compliant</span>
+              <span>Credentials verified by BadgeNest · Open Badges compliant</span>
             </div>
           </div>
         </footer>
