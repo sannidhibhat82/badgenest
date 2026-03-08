@@ -148,6 +148,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="security" className="space-y-4">
+            <ChangePasswordCard />
             <Card className="border-destructive/20 shadow-card">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
