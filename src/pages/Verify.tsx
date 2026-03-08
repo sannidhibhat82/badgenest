@@ -191,8 +191,11 @@ export default function Verify() {
             </Card>
           )}
 
-          {/* Share */}
-          <div className="flex justify-center">
+          {/* View count + Share */}
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-sm text-muted-foreground">
+              This badge has been verified <span className="font-semibold text-foreground">{viewCount}</span> time{viewCount !== 1 ? "s" : ""}
+            </p>
             <Button variant="outline" onClick={copyLink} className="gap-2">
               <Copy className="h-4 w-4" /> Copy Verification Link
             </Button>

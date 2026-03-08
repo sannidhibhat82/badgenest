@@ -9,7 +9,7 @@ import evolveLogo from "@/assets/evolve-logo.png";
 import NotificationCenter from "@/components/NotificationCenter";
 
 export default function LearnerLayout({ children }: { children: ReactNode }) {
-  const { profile, signOut, isAdmin } = useAuth();
+  const { user, profile, signOut, isAdmin } = useAuth();
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase()
     : "U";
