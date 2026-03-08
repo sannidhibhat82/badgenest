@@ -17,6 +17,8 @@ import AssertionsPage from "./pages/admin/AssertionsPage";
 import LearnersPage from "./pages/admin/LearnersPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import AuditLogPage from "./pages/admin/AuditLogPage";
+import ApiKeysPage from "./pages/admin/ApiKeysPage";
+import WebhooksPage from "./pages/admin/WebhooksPage";
 import Settings from "./pages/Settings";
 import Verify from "./pages/Verify";
 import PublicProfile from "./pages/PublicProfile";
@@ -49,6 +51,8 @@ const App = () => (
               <Route path="/admin/learners" element={<ProtectedRoute requireAdmin><LearnersPage /></ProtectedRoute>} />
               <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><AnalyticsPage /></ProtectedRoute>} />
               <Route path="/admin/audit-log" element={<ProtectedRoute requireAdmin><AuditLogPage /></ProtectedRoute>} />
+              <Route path="/admin/api-keys" element={<ProtectedRoute requireAdmin><ApiKeysPage /></ProtectedRoute>} />
+              <Route path="/admin/webhooks" element={<ProtectedRoute requireAdmin><WebhooksPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
