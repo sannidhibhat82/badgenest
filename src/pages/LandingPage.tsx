@@ -73,7 +73,7 @@ export default function LandingPage() {
         <nav className="sticky top-0 z-50 glass">
           <div className="container mx-auto flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2.5">
-              <img src={evolveLogo} alt="Evolve Careers" className="h-8" />
+              <img src={badgenestLogo} alt="BadgeNest" className="h-8" />
             </div>
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" asChild>
