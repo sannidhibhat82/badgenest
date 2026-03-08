@@ -300,10 +300,10 @@ export default function Documentation() {
   return (
     <>
       <Helmet>
-        <title>Documentation — Evolve Careers Digital Badge Platform</title>
+        <title>Documentation — BadgeNest Digital Badge Platform</title>
         <meta
           name="description"
-          content="Complete documentation for the Evolve Careers Digital Badge Platform. Features, architecture, API reference, security, and competitive comparison."
+          content="Complete documentation for the BadgeNest Digital Badge Platform. Features, architecture, API reference, security, and competitive comparison."
         />
       </Helmet>
 
