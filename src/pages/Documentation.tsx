@@ -436,7 +436,7 @@ export default function Documentation() {
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold min-w-[180px]">Feature</TableHead>
                     <TableHead className="text-center font-semibold">
-                      <span className="text-primary">Evolve Careers</span>
+                      <span className="text-primary">BadgeNest</span>
                     </TableHead>
                     <TableHead className="text-center font-semibold">Credly</TableHead>
                     <TableHead className="text-center font-semibold">Accredible</TableHead>
