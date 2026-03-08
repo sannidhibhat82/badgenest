@@ -129,7 +129,7 @@ export default function PublicProfile() {
         <header className="sticky top-0 z-10 glass">
           <div className="container mx-auto flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2.5">
-              <img src={evolveLogo} alt="Evolve Careers" className="h-7" />
+              <img src={badgenestLogo} alt="BadgeNest" className="h-7" />
               <Separator orientation="vertical" className="h-5" />
               <span className="text-sm font-medium text-muted-foreground">Badge Portfolio</span>
             </div>
