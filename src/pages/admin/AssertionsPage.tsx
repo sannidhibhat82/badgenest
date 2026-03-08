@@ -40,6 +40,10 @@ export default function AssertionsPage() {
   // Delete
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  // Invite
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: "", badge_class_id: "", evidence_url: "" });
+
   const { data: assertions = [], isLoading } = useQuery({
     queryKey: ["assertions"],
     queryFn: async () => {
