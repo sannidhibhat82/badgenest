@@ -102,15 +102,23 @@ export default function AssertionsPage() {
 
       if (!recipientId) throw new Error("Please select a learner or enter an email");
 
-      const { error } = await supabase.from("assertions").insert({
+      const { data: inserted, error } = await supabase.from("assertions").insert({
         recipient_id: recipientId,
         badge_class_id: form.badge_class_id,
         evidence_url: form.evidence_url || null,
-      });
+      }).select("id").single();
       if (error) throw error;
 
-      // Send notification
+      // Audit log
       const badgeName = badges.find((b) => b.id === form.badge_class_id)?.name || "Badge";
+      const learner = learners.find((l) => l.user_id === recipientId);
+      await logAuditAction("badge.issued", "assertion", inserted.id, {
+        badge_name: badgeName,
+        learner_name: learner?.full_name,
+        learner_email: learner?.email || form.email,
+      });
+
+      // Send notification
       try {
         await supabase.functions.invoke("send-badge-notification", {
           body: { recipientId, badgeName, evidenceUrl: form.evidence_url || null },
