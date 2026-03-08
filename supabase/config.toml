@@ -2,3 +2,6 @@ project_id = "mwmndtorfdhsnjpcopmr"
 
 [functions.public-api]
 verify_jwt = false
+
+[functions.sign-assertion]
+verify_jwt = false

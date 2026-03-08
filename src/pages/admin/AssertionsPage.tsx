@@ -185,6 +185,20 @@ export default function AssertionsPage() {
           evidence_url: evidence,
         });
         if (!error) {
+          // Get the inserted assertion id for signing
+          const { data: justInserted } = await supabase
+            .from("assertions")
+            .select("id")
+            .eq("recipient_id", recipientId)
+            .eq("badge_class_id", csvBadgeId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+          if (justInserted) {
+            supabase.functions.invoke("sign-assertion", {
+              body: { assertion_id: justInserted.id },
+            }).catch(console.error);
+          }
           inserted++;
           const badgeName = badges.find((b) => b.id === csvBadgeId)?.name || "Badge";
           supabase.functions.invoke("send-badge-notification", {

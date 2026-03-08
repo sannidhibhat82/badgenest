@@ -5,10 +5,12 @@ import { Helmet } from "react-helmet-async";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, AlertTriangle, Copy, ExternalLink, Calendar, User, Building2 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CheckCircle, XCircle, AlertTriangle, Copy, ExternalLink, Calendar, User, Building2, ShieldCheck, ShieldX, ChevronDown, Download, Code } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import evolveLogo from "@/assets/evolve-logo.png";
+import { useState } from "react";
 
 function getStatus(assertion: any) {
   if (assertion.revoked) return { label: "Revoked", icon: XCircle, variant: "destructive" as const, color: "text-destructive" };
@@ -18,6 +20,7 @@ function getStatus(assertion: any) {
 
 export default function Verify() {
   const { assertionId } = useParams<{ assertionId: string }>();
+  const [jsonOpen, setJsonOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["verify", assertionId],
@@ -29,21 +32,45 @@ export default function Verify() {
         .single();
       if (error) throw error;
 
-      const { data: badge } = await supabase
-        .from("badge_classes")
-        .select("*")
-        .eq("id", assertion.badge_class_id)
-        .single();
+      // Use snapshot if available, otherwise fall back to live data
+      const snapshot = assertion.snapshot_json as any;
 
-      const { data: issuer } = badge
-        ? await supabase.from("issuers").select("*").eq("id", badge.issuer_id).single()
-        : { data: null };
+      let badge = snapshot?.badge ?? null;
+      let issuer = snapshot?.issuer ?? null;
+      let recipient = snapshot?.recipient ?? null;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, avatar_url")
-        .eq("user_id", assertion.recipient_id)
-        .single();
+      // Fall back to live data if no snapshot
+      if (!badge) {
+        const { data: b } = await supabase
+          .from("badge_classes")
+          .select("*")
+          .eq("id", assertion.badge_class_id)
+          .single();
+        badge = b;
+      }
+
+      if (!issuer && badge?.issuer_id) {
+        const { data: i } = await supabase.from("issuers").select("*").eq("id", badge.issuer_id).single();
+        issuer = i;
+      } else if (!issuer && !snapshot) {
+        // Try to get issuer from live badge data
+        if (badge) {
+          const { data: liveB } = await supabase.from("badge_classes").select("issuer_id").eq("id", assertion.badge_class_id).single();
+          if (liveB) {
+            const { data: i } = await supabase.from("issuers").select("*").eq("id", liveB.issuer_id).single();
+            issuer = i;
+          }
+        }
+      }
+
+      if (!recipient) {
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("full_name, avatar_url")
+          .eq("user_id", assertion.recipient_id)
+          .single();
+        recipient = p ? { full_name: p.full_name } : null;
+      }
 
       // Track view
       await supabase.from("badge_views").insert({ assertion_id: assertionId! });
@@ -54,7 +81,15 @@ export default function Verify() {
         .select("*", { count: "exact", head: true })
         .eq("assertion_id", assertionId!);
 
-      return { assertion, badge, issuer, profile, viewCount: count ?? 0 };
+      return {
+        assertion,
+        badge,
+        issuer,
+        recipient,
+        viewCount: count ?? 0,
+        hasSig: !!assertion.signature,
+        hasSnapshot: !!snapshot,
+      };
     },
     enabled: !!assertionId,
   });
@@ -64,38 +99,57 @@ export default function Verify() {
     toast({ title: "Link copied!" });
   };
 
+  const downloadJson = () => {
+    if (!data) return;
+    const blob = new Blob([JSON.stringify(buildJsonLd(), null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `badge-${assertionId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading…</p></div>;
   if (error || !data) return <div className="min-h-screen flex items-center justify-center"><p className="text-destructive">Badge not found.</p></div>;
 
-  const { assertion, badge, issuer, profile, viewCount } = data;
+  const { assertion, badge, issuer, recipient, viewCount, hasSig, hasSnapshot } = data;
   const status = getStatus(assertion);
   const StatusIcon = status.icon;
 
-  const jsonLd = {
-    "@context": "https://w3id.org/openbadges/v2",
-    type: "Assertion",
-    id: window.location.href,
-    badge: {
-      type: "BadgeClass",
-      name: badge?.name,
-      description: badge?.description,
-      image: badge?.image_url,
-      criteria: { narrative: badge?.criteria },
-      issuer: {
-        type: "Issuer",
-        name: issuer?.name,
-        url: issuer?.website,
-        email: issuer?.email,
-        image: issuer?.logo_url,
+  function buildJsonLd() {
+    return {
+      "@context": "https://w3id.org/openbadges/v2",
+      type: "Assertion",
+      id: window.location.href,
+      badge: {
+        type: "BadgeClass",
+        name: badge?.name,
+        description: badge?.description,
+        image: badge?.image_url,
+        criteria: { narrative: badge?.criteria },
+        issuer: {
+          type: "Issuer",
+          name: issuer?.name,
+          url: issuer?.website,
+          email: issuer?.email,
+          image: issuer?.logo_url,
+        },
       },
-    },
-    recipient: { type: "email", identity: profile?.full_name ?? "Unknown" },
-    issuedOn: assertion.issued_at,
-    expires: assertion.expires_at ?? undefined,
-    revoked: assertion.revoked,
-    revocationReason: assertion.revocation_reason ?? undefined,
-    evidence: assertion.evidence_url ? [{ id: assertion.evidence_url }] : undefined,
-  };
+      recipient: { type: "email", identity: recipient?.full_name ?? "Unknown" },
+      issuedOn: assertion.issued_at,
+      expires: assertion.expires_at ?? undefined,
+      revoked: assertion.revoked,
+      revocationReason: assertion.revocation_reason ?? undefined,
+      evidence: assertion.evidence_url ? [{ id: assertion.evidence_url }] : undefined,
+      verification: {
+        type: "signed",
+        signedAt: (assertion.snapshot_json as any)?.signed_at ?? undefined,
+      },
+    };
+  }
+
+  const jsonLd = buildJsonLd();
 
   return (
     <>
@@ -117,12 +171,33 @@ export default function Verify() {
         <main className="container mx-auto max-w-2xl px-4 py-10 space-y-6">
           {/* Status Banner */}
           <Card className={`border-2 ${status.label === "Valid" ? "border-green-500/40" : status.label === "Revoked" ? "border-destructive/40" : "border-yellow-500/40"}`}>
-            <CardContent className="flex items-center gap-4 py-6">
-              <StatusIcon className={`h-10 w-10 ${status.color}`} />
-              <div>
-                <p className="text-lg font-bold">{status.label === "Valid" ? "✅ This badge is valid" : status.label === "Expired" ? "⚠️ This badge has expired" : "❌ This badge has been revoked"}</p>
-                {assertion.revocation_reason && <p className="text-sm text-muted-foreground">Reason: {assertion.revocation_reason}</p>}
+            <CardContent className="py-6 space-y-3">
+              <div className="flex items-center gap-4">
+                <StatusIcon className={`h-10 w-10 ${status.color}`} />
+                <div>
+                  <p className="text-lg font-bold">{status.label === "Valid" ? "✅ This badge is valid" : status.label === "Expired" ? "⚠️ This badge has expired" : "❌ This badge has been revoked"}</p>
+                  {assertion.revocation_reason && <p className="text-sm text-muted-foreground">Reason: {assertion.revocation_reason}</p>}
+                </div>
               </div>
+              {/* Signature status */}
+              <div className="flex items-center gap-2 pl-14">
+                {hasSig ? (
+                  <>
+                    <ShieldCheck className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-600 font-medium">Signature verified — credential integrity confirmed</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldX className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">No cryptographic signature</span>
+                  </>
+                )}
+              </div>
+              {hasSnapshot && (
+                <p className="text-xs text-muted-foreground pl-14">
+                  Credential data frozen at issuance — immune to post-issuance edits
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -161,7 +236,7 @@ export default function Verify() {
                 <User className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Recipient</p>
-                  <p className="font-medium">{profile?.full_name || "Unknown"}</p>
+                  <p className="font-medium">{recipient?.full_name || "Unknown"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -190,6 +265,29 @@ export default function Verify() {
               </CardContent>
             </Card>
           )}
+
+          {/* Raw JSON Metadata */}
+          <Card>
+            <Collapsible open={jsonOpen} onOpenChange={setJsonOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-accent/50 rounded-t-lg transition-colors">
+                <div className="flex items-center gap-2">
+                  <Code className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Raw Metadata (JSON-LD)</span>
+                </div>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${jsonOpen ? "rotate-180" : ""}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-3">
+                  <pre className="bg-muted rounded-md p-4 text-xs overflow-auto max-h-80 font-mono">
+                    {JSON.stringify(jsonLd, null, 2)}
+                  </pre>
+                  <Button variant="outline" size="sm" onClick={downloadJson} className="gap-2">
+                    <Download className="h-4 w-4" /> Download Badge JSON
+                  </Button>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
 
           {/* View count + Share */}
           <div className="flex flex-col items-center gap-3">
