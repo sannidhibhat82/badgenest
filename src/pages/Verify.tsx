@@ -67,7 +67,7 @@ export default function Verify() {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading…</p></div>;
   if (error || !data) return <div className="min-h-screen flex items-center justify-center"><p className="text-destructive">Badge not found.</p></div>;
 
-  const { assertion, badge, issuer, profile } = data;
+  const { assertion, badge, issuer, profile, viewCount } = data;
   const status = getStatus(assertion);
   const StatusIcon = status.icon;
 
