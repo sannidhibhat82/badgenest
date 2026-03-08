@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          permissions: Json
+          revoked: boolean
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          permissions?: Json
+          revoked?: boolean
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          permissions?: Json
+          revoked?: boolean
+        }
+        Relationships: []
+      }
       assertions: {
         Row: {
           badge_class_id: string
@@ -430,6 +469,45 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhooks: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string
+          events: string[]
+          failure_count: number
+          id: string
+          last_triggered_at: string | null
+          secret: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by: string
+          events?: string[]
+          failure_count?: number
+          id?: string
+          last_triggered_at?: string | null
+          secret: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string
+          events?: string[]
+          failure_count?: number
+          id?: string
+          last_triggered_at?: string | null
+          secret?: string
+          updated_at?: string
+          url?: string
         }
         Relationships: []
       }
