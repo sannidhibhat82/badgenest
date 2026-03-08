@@ -59,7 +59,7 @@ const sections: Section[] = [
   },
   {
     id: "why-evolve",
-    title: "Why Evolve Careers?",
+    title: "Why BadgeNest?",
     icon: <Zap className="h-4 w-4" />,
   },
   {
