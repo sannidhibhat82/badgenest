@@ -45,7 +45,16 @@ export default function Verify() {
         .eq("user_id", assertion.recipient_id)
         .single();
 
-      return { assertion, badge, issuer, profile };
+      // Track view
+      await supabase.from("badge_views").insert({ assertion_id: assertionId! });
+
+      // Get view count
+      const { count } = await supabase
+        .from("badge_views")
+        .select("*", { count: "exact", head: true })
+        .eq("assertion_id", assertionId!);
+
+      return { assertion, badge, issuer, profile, viewCount: count ?? 0 };
     },
     enabled: !!assertionId,
   });
