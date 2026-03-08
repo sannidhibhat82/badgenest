@@ -1,0 +1,1 @@
+ALTER TABLE public.assertions ADD COLUMN signature text, ADD COLUMN snapshot_json jsonb;

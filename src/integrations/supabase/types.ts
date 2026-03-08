@@ -64,6 +64,8 @@ export type Database = {
           recipient_id: string
           revocation_reason: string | null
           revoked: boolean
+          signature: string | null
+          snapshot_json: Json | null
           updated_at: string
         }
         Insert: {
@@ -76,6 +78,8 @@ export type Database = {
           recipient_id: string
           revocation_reason?: string | null
           revoked?: boolean
+          signature?: string | null
+          snapshot_json?: Json | null
           updated_at?: string
         }
         Update: {
@@ -88,6 +92,8 @@ export type Database = {
           recipient_id?: string
           revocation_reason?: string | null
           revoked?: boolean
+          signature?: string | null
+          snapshot_json?: Json | null
           updated_at?: string
         }
         Relationships: [

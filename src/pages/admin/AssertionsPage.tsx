@@ -109,6 +109,15 @@ export default function AssertionsPage() {
       }).select("id").single();
       if (error) throw error;
 
+      // Sign assertion (snapshot + HMAC signature)
+      try {
+        await supabase.functions.invoke("sign-assertion", {
+          body: { assertion_id: inserted.id },
+        });
+      } catch (signErr) {
+        console.error("Signing failed:", signErr);
+      }
+
       // Audit log
       const badgeName = badges.find((b) => b.id === form.badge_class_id)?.name || "Badge";
       const learner = learners.find((l) => l.user_id === recipientId);
@@ -176,6 +185,20 @@ export default function AssertionsPage() {
           evidence_url: evidence,
         });
         if (!error) {
+          // Get the inserted assertion id for signing
+          const { data: justInserted } = await supabase
+            .from("assertions")
+            .select("id")
+            .eq("recipient_id", recipientId)
+            .eq("badge_class_id", csvBadgeId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+          if (justInserted) {
+            supabase.functions.invoke("sign-assertion", {
+              body: { assertion_id: justInserted.id },
+            }).catch(console.error);
+          }
           inserted++;
           const badgeName = badges.find((b) => b.id === csvBadgeId)?.name || "Badge";
           supabase.functions.invoke("send-badge-notification", {
