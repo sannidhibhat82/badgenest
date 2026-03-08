@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import LearnerLayout from "@/layouts/LearnerLayout";
 import BadgeCard from "@/components/BadgeCard";
 import BadgeDetailModal from "@/components/BadgeDetailModal";
-import { Award, Search, LayoutGrid, List } from "lucide-react";
+import { Award, Search, LayoutGrid, List, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
