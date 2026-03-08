@@ -61,6 +61,63 @@ export type Database = {
           },
         ]
       }
+      badge_categories: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      badge_class_categories: {
+        Row: {
+          badge_class_id: string
+          category_id: string
+          id: string
+        }
+        Insert: {
+          badge_class_id: string
+          category_id: string
+          id?: string
+        }
+        Update: {
+          badge_class_id?: string
+          category_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badge_class_categories_badge_class_id_fkey"
+            columns: ["badge_class_id"]
+            isOneToOne: false
+            referencedRelation: "badge_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "badge_class_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "badge_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       badge_classes: {
         Row: {
           created_at: string
@@ -101,6 +158,35 @@ export type Database = {
             columns: ["issuer_id"]
             isOneToOne: false
             referencedRelation: "issuers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      badge_views: {
+        Row: {
+          assertion_id: string
+          id: string
+          viewed_at: string
+          viewer_hash: string | null
+        }
+        Insert: {
+          assertion_id: string
+          id?: string
+          viewed_at?: string
+          viewer_hash?: string | null
+        }
+        Update: {
+          assertion_id?: string
+          id?: string
+          viewed_at?: string
+          viewer_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badge_views_assertion_id_fkey"
+            columns: ["assertion_id"]
+            isOneToOne: false
+            referencedRelation: "assertions"
             referencedColumns: ["id"]
           },
         ]
