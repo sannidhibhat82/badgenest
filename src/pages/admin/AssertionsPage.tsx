@@ -101,8 +101,18 @@ export default function AssertionsPage() {
         evidence_url: form.evidence_url || null,
       });
       if (error) throw error;
+
+      // Send notification
+      const badgeName = badges.find((b) => b.id === form.badge_class_id)?.name || "Badge";
+      try {
+        await supabase.functions.invoke("send-badge-notification", {
+          body: { recipientId, badgeName, evidenceUrl: form.evidence_url || null },
+        });
+      } catch (notifErr) {
+        console.error("Notification failed:", notifErr);
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["assertions"] }); setIssueOpen(false); toast({ title: "Badge issued" }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["assertions"] }); setIssueOpen(false); toast({ title: "Badge issued & learner notified" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
