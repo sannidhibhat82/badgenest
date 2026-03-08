@@ -5,13 +5,25 @@ import { Helmet } from "react-helmet-async";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Award, CheckCircle, XCircle, AlertTriangle, ExternalLink, Calendar } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import {
+  Award,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  ExternalLink,
+  Calendar,
+  Shield,
+  Eye,
+  Trophy,
+} from "lucide-react";
 import { format } from "date-fns";
 import evolveLogo from "@/assets/evolve-logo.png";
 
 function getStatus(a: { revoked: boolean; expires_at: string | null }) {
   if (a.revoked) return { label: "Revoked", variant: "destructive" as const, icon: XCircle };
-  if (a.expires_at && new Date(a.expires_at) < new Date()) return { label: "Expired", variant: "secondary" as const, icon: AlertTriangle };
+  if (a.expires_at && new Date(a.expires_at) < new Date())
+    return { label: "Expired", variant: "secondary" as const, icon: AlertTriangle };
   return { label: "Active", variant: "default" as const, icon: CheckCircle };
 }
 
@@ -23,14 +35,14 @@ export default function PublicProfile() {
     queryFn: async () => {
       const { data: profile, error: pErr } = await supabase
         .from("profiles")
-        .select("user_id, full_name, avatar_url")
+        .select("user_id, full_name, avatar_url, email")
         .eq("user_id", userId!)
         .single();
       if (pErr) throw pErr;
 
       const { data: assertions } = await supabase
         .from("assertions")
-        .select("id, issued_at, expires_at, revoked, badge_class_id")
+        .select("id, issued_at, expires_at, revoked, badge_class_id, evidence_url")
         .eq("recipient_id", userId!)
         .eq("revoked", false)
         .order("issued_at", { ascending: false });
@@ -45,7 +57,6 @@ export default function PublicProfile() {
         ? await supabase.from("issuers").select("id, name, logo_url").in("id", issuerIds)
         : { data: [] };
 
-      // Fetch view counts for each assertion
       const { data: viewCounts } = await supabase
         .from("badge_views")
         .select("assertion_id");
@@ -56,7 +67,12 @@ export default function PublicProfile() {
       }
 
       const issuerMap = Object.fromEntries((issuers ?? []).map((i) => [i.id, i]));
-      const badgeMap = Object.fromEntries((badges ?? []).map((b) => [b.id, { ...b, issuer: issuerMap[b.issuer_id] }]));
+      const badgeMap = Object.fromEntries(
+        (badges ?? []).map((b) => [b.id, { ...b, issuer: issuerMap[b.issuer_id] }])
+      );
+
+      // Unique issuers for stats
+      const uniqueIssuers = new Set((badges ?? []).map((b) => b.issuer_id));
 
       return {
         profile,
@@ -65,51 +81,129 @@ export default function PublicProfile() {
           badge: badgeMap[a.badge_class_id],
           views: viewMap[a.id] || 0,
         })),
+        totalViews: Object.values(viewMap).reduce((s, v) => s + v, 0),
+        uniqueIssuerCount: uniqueIssuers.size,
       };
     },
     enabled: !!userId,
   });
 
   const initials = data?.profile?.full_name
-    ? data.profile.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase()
+    ? data.profile.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
     : "?";
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading profile…</p></div>;
-  if (error || !data) return <div className="min-h-screen flex items-center justify-center"><p className="text-destructive">Profile not found.</p></div>;
+  if (isLoading)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Loading profile…</p>
+        </div>
+      </div>
+    );
 
-  const activeCount = data.assertions.filter((a) => !a.revoked && !(a.expires_at && new Date(a.expires_at) < new Date())).length;
+  if (error || !data)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Award className="mx-auto h-12 w-12 text-muted-foreground/40" />
+          <p className="mt-3 text-lg font-medium text-foreground">Profile not found</p>
+          <p className="text-sm text-muted-foreground">This profile may not exist or is private.</p>
+        </div>
+      </div>
+    );
+
+  const activeCount = data.assertions.filter(
+    (a) => !a.revoked && !(a.expires_at && new Date(a.expires_at) < new Date())
+  ).length;
 
   return (
     <>
       <Helmet>
         <title>{data.profile.full_name ?? "Learner"} — Badge Portfolio | Evolve Careers</title>
-        <meta name="description" content={`View ${data.profile.full_name}'s ${activeCount} earned digital badges on Evolve Careers.`} />
+        <meta
+          name="description"
+          content={`View ${data.profile.full_name}'s ${activeCount} earned digital badges on Evolve Careers.`}
+        />
       </Helmet>
 
       <div className="min-h-screen bg-background">
-        <header className="border-b bg-card">
-          <div className="container mx-auto flex items-center gap-3 px-4 py-4">
-            <img src={evolveLogo} alt="Evolve Careers" className="h-8" />
-            <span className="font-semibold text-foreground">Badge Portfolio</span>
+        {/* Header */}
+        <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="container mx-auto flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2.5">
+              <img src={evolveLogo} alt="Evolve Careers" className="h-7" />
+              <Separator orientation="vertical" className="h-5" />
+              <span className="text-sm font-medium text-muted-foreground">Badge Portfolio</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Shield className="h-3.5 w-3.5 text-primary" />
+              <span>Verified Credentials</span>
+            </div>
           </div>
         </header>
 
-        <main className="container mx-auto max-w-4xl px-4 py-10">
-          {/* Profile header */}
-          <div className="flex flex-col items-center text-center mb-10">
-            <Avatar className="h-24 w-24 mb-4">
-              <AvatarImage src={data.profile.avatar_url ?? undefined} />
-              <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
-            </Avatar>
-            <h1 className="text-3xl font-bold text-foreground">{data.profile.full_name || "Learner"}</h1>
-            <p className="text-muted-foreground mt-1">{activeCount} badge{activeCount !== 1 ? "s" : ""} earned</p>
-          </div>
+        {/* Hero */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-primary/3 to-transparent" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
 
-          {/* Badge grid */}
+          <div className="relative container mx-auto max-w-4xl px-4 py-12">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
+              <Avatar className="h-28 w-28 ring-4 ring-card shadow-xl">
+                <AvatarImage src={data.profile.avatar_url ?? undefined} />
+                <AvatarFallback className="text-3xl font-bold bg-primary text-primary-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-center sm:text-left flex-1">
+                <h1 className="text-3xl font-bold text-foreground">
+                  {data.profile.full_name || "Learner"}
+                </h1>
+                <p className="mt-1 text-muted-foreground">Digital credential portfolio</p>
+
+                {/* Stats row */}
+                <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-4">
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <Trophy className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-foreground">{activeCount}</span>
+                    <span className="text-muted-foreground">badge{activeCount !== 1 ? "s" : ""}</span>
+                  </div>
+                  <Separator orientation="vertical" className="h-4" />
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <Award className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold text-foreground">{data.uniqueIssuerCount}</span>
+                    <span className="text-muted-foreground">issuer{data.uniqueIssuerCount !== 1 ? "s" : ""}</span>
+                  </div>
+                  {data.totalViews > 0 && (
+                    <>
+                      <Separator orientation="vertical" className="h-4" />
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-semibold text-foreground">{data.totalViews}</span>
+                        <span className="text-muted-foreground">view{data.totalViews !== 1 ? "s" : ""}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Badge grid */}
+        <main className="container mx-auto max-w-4xl px-4 py-8">
           {data.assertions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-              <Award className="h-12 w-12 text-muted-foreground/50" />
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed p-16 text-center">
+              <Award className="h-16 w-16 text-muted-foreground/30" />
               <p className="mt-4 text-lg font-medium text-muted-foreground">No badges earned yet</p>
+              <p className="mt-1 text-sm text-muted-foreground/70">
+                Badges will appear here once earned.
+              </p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -117,37 +211,55 @@ export default function PublicProfile() {
                 const status = getStatus(a);
                 const StatusIcon = status.icon;
                 return (
-                  <Link key={a.id} to={`/verify/${a.id}`}>
-                    <Card className="h-full transition-shadow hover:shadow-md cursor-pointer">
+                  <Link key={a.id} to={`/verify/${a.id}`} className="group">
+                    <Card className="h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 border-border/60 group-hover:border-primary/30">
                       <CardContent className="p-5">
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-4">
                           {a.badge?.image_url ? (
-                            <img src={a.badge.image_url} alt={a.badge.name} className="h-14 w-14 rounded-lg object-contain border" />
+                            <div className="shrink-0 rounded-xl bg-muted/50 p-1.5 ring-1 ring-border group-hover:ring-primary/20 transition-colors">
+                              <img
+                                src={a.badge.image_url}
+                                alt={a.badge.name}
+                                className="h-14 w-14 rounded-lg object-contain"
+                              />
+                            </div>
                           ) : (
-                            <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-primary/10">
-                              <Award className="h-7 w-7 text-primary" />
+                            <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                              <Award className="h-8 w-8 text-primary" />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold truncate text-foreground">{a.badge?.name ?? "Unknown Badge"}</p>
-                            <p className="text-xs text-muted-foreground truncate">{a.badge?.issuer?.name ?? "Unknown Issuer"}</p>
-                            <div className="flex items-center gap-2 mt-2">
+                            <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                              {a.badge?.name ?? "Unknown Badge"}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                              {a.badge?.issuer?.name ?? "Unknown Issuer"}
+                            </p>
+                            <div className="mt-2">
                               <Badge variant={status.variant} className="text-[10px]">
-                                <StatusIcon className="h-3 w-3 mr-1" />{status.label}
+                                <StatusIcon className="h-3 w-3 mr-1" />
+                                {status.label}
                               </Badge>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+
+                        <Separator className="my-3" />
+
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {format(new Date(a.issued_at), "MMM d, yyyy")}
                           </span>
-                          {a.views > 0 && (
-                            <span className="flex items-center gap-1">
-                              <ExternalLink className="h-3 w-3" />{a.views} view{a.views !== 1 ? "s" : ""}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-3">
+                            {a.views > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Eye className="h-3 w-3" />
+                                {a.views}
+                              </span>
+                            )}
+                            <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -157,6 +269,16 @@ export default function PublicProfile() {
             </div>
           )}
         </main>
+
+        {/* Footer */}
+        <footer className="border-t mt-12">
+          <div className="container mx-auto max-w-4xl px-4 py-6 text-center">
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Shield className="h-3.5 w-3.5" />
+              <span>Credentials verified by Evolve Careers · Open Badges compliant</span>
+            </div>
+          </div>
+        </footer>
       </div>
     </>
   );
