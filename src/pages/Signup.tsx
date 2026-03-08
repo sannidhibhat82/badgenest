@@ -64,7 +64,7 @@ export default function Signup() {
               Join thousands of learners showcasing verified skills with portable digital badges.
             </p>
           </div>
-          <p className="text-xs text-primary-foreground/40">© {new Date().getFullYear()} Evolve Careers</p>
+          <p className="text-xs text-primary-foreground/40">© {new Date().getFullYear()} BadgeNest</p>
         </div>
       </div>
 
