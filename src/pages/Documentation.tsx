@@ -354,9 +354,9 @@ export default function Documentation() {
             {/* ---- OVERVIEW ---- */}
             <SectionHeading id="overview">Platform Overview</SectionHeading>
             <P>
-              Evolve Careers is a <strong>private-label digital badge platform</strong> built for
+              BadgeNest is a <strong>private-label digital badge platform</strong> built for
               organisations that want full control over how they issue, manage, and verify professional
-              credentials. Unlike SaaS marketplaces that lock you into their ecosystem, Evolve Careers
+              credentials. Unlike SaaS marketplaces that lock you into their ecosystem, BadgeNest
               gives you complete data ownership, white-label branding, and cryptographic verification —
               all on modern, open-source infrastructure.
             </P>
