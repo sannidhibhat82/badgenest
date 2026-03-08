@@ -16,6 +16,7 @@ const adminNav = [
   { label: "Assertions", href: "/admin/assertions", icon: Shield },
   { label: "Learners", href: "/admin/learners", icon: Users },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+  { label: "Audit Log", href: "/admin/audit-log", icon: FileText },
 ];
 
 function NavItems({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
