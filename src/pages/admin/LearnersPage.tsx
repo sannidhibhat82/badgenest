@@ -10,9 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Search, Tag, Plus, X, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Tag, Plus, X, Download, ChevronLeft, ChevronRight, Tags } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -27,6 +28,11 @@ export default function LearnersPage() {
   const [assignUserId, setAssignUserId] = useState("");
   const [assignTagId, setAssignTagId] = useState("");
   const [page, setPage] = useState(0);
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkTagOpen, setBulkTagOpen] = useState(false);
+  const [bulkTagId, setBulkTagId] = useState("");
 
   const { data: tags = [] } = useQuery({
     queryKey: ["tags"],
@@ -107,6 +113,36 @@ export default function LearnersPage() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  // Bulk tag assignment
+  const bulkAssignTag = useMutation({
+    mutationFn: async () => {
+      if (!bulkTagId || selectedIds.size === 0) throw new Error("Select learners and a tag");
+      const inserts = Array.from(selectedIds)
+        .filter((userId) => {
+          const existing = userTagMap.get(userId) ?? [];
+          return !existing.some((t) => t.id === bulkTagId);
+        })
+        .map((userId) => ({ profile_user_id: userId, tag_id: bulkTagId }));
+
+      if (inserts.length === 0) {
+        toast({ title: "All selected learners already have this tag" });
+        return 0;
+      }
+
+      const { error } = await supabase.from("profile_tags").insert(inserts);
+      if (error) throw error;
+      return inserts.length;
+    },
+    onSuccess: (count) => {
+      qc.invalidateQueries({ queryKey: ["profile_tags"] });
+      setBulkTagOpen(false);
+      setSelectedIds(new Set());
+      setBulkTagId("");
+      if (count && count > 0) toast({ title: `Tag assigned to ${count} learner(s)` });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const filtered = learners.filter((l) => {
     if (search && !l.full_name?.toLowerCase().includes(search.toLowerCase()) && !l.email?.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterTag !== "all") {
@@ -118,6 +154,23 @@ export default function LearnersPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  const toggleSelect = (userId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginated.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginated.map((l) => l.user_id)));
+    }
+  };
 
   const exportCsv = () => {
     const rows = [["Name", "Email", "Tags", "Total Badges", "Active", "Revoked"]];
@@ -181,6 +234,11 @@ export default function LearnersPage() {
             ))}
           </SelectContent>
         </Select>
+        {selectedIds.size > 0 && (
+          <Button onClick={() => { setBulkTagId(""); setBulkTagOpen(true); }} variant="default" size="sm">
+            <Tags className="mr-2 h-4 w-4" />Tag {selectedIds.size} selected
+          </Button>
+        )}
       </div>
 
       <Card className="mt-4">
@@ -188,6 +246,12 @@ export default function LearnersPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={paginated.length > 0 && selectedIds.size === paginated.length}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Learner</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Tags</TableHead>
@@ -199,14 +263,20 @@ export default function LearnersPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
               ) : paginated.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No learners found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No learners found.</TableCell></TableRow>
               ) : paginated.map((l) => {
                 const initials = l.full_name ? l.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "?";
                 const ut = userTagMap.get(l.user_id) ?? [];
                 return (
-                  <TableRow key={l.user_id}>
+                  <TableRow key={l.user_id} className={selectedIds.has(l.user_id) ? "bg-muted/50" : ""}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(l.user_id)}
+                        onCheckedChange={() => toggleSelect(l.user_id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
@@ -292,7 +362,7 @@ export default function LearnersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Tag Dialog */}
+      {/* Assign Tag Dialog (single) */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Assign Tag</DialogTitle></DialogHeader>
@@ -318,6 +388,41 @@ export default function LearnersPage() {
             <DialogFooter>
               <Button type="submit" disabled={assignTag.isPending || !assignTagId}>
                 {assignTag.isPending ? "Assigning…" : "Assign"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Tag Assignment Dialog */}
+      <Dialog open={bulkTagOpen} onOpenChange={setBulkTagOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Bulk Tag Assignment</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Assign a tag to <span className="font-semibold text-foreground">{selectedIds.size}</span> selected learner(s).
+            Learners who already have the tag will be skipped.
+          </p>
+          <form onSubmit={(e) => { e.preventDefault(); bulkAssignTag.mutate(); }} className="space-y-4">
+            <div>
+              <Label>Tag *</Label>
+              <Select value={bulkTagId} onValueChange={setBulkTagId}>
+                <SelectTrigger><SelectValue placeholder="Select tag" /></SelectTrigger>
+                <SelectContent>
+                  {tags.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} />
+                        {t.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setBulkTagOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={bulkAssignTag.isPending || !bulkTagId}>
+                {bulkAssignTag.isPending ? "Assigning…" : `Assign to ${selectedIds.size} learner(s)`}
               </Button>
             </DialogFooter>
           </form>
