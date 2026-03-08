@@ -144,11 +144,16 @@ export default function BadgeDetailModal({
         <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 pt-8 pb-6">
           <div className="flex flex-col items-center text-center">
             {assertion.badge_class.image_url ? (
-              <div className="rounded-2xl bg-card p-2 shadow-lg ring-1 ring-border">
+              <div className="rounded-2xl bg-card p-3 shadow-lg ring-1 ring-border">
                 <img
                   src={assertion.badge_class.image_url}
                   alt={assertion.badge_class.name}
-                  className="h-28 w-28 rounded-xl object-contain"
+                  crossOrigin="anonymous"
+                  className="h-24 w-24 sm:h-28 sm:w-28 rounded-xl object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = '<div class="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg></div>';
+                  }}
                 />
               </div>
             ) : (
