@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import AdminLayout from "@/layouts/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +14,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Upload, ShieldCheck, ShieldX, ShieldAlert, Search, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Upload, ShieldCheck, ShieldX, ShieldAlert, Search, Trash2, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { format } from "date-fns";
+import { logAuditAction } from "@/lib/audit";
 
 const PAGE_SIZE = 20;
 
 export default function AssertionsPage() {
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [issueOpen, setIssueOpen] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
@@ -36,6 +39,10 @@ export default function AssertionsPage() {
 
   // Delete
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Invite
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: "", badge_class_id: "", evidence_url: "" });
 
   const { data: assertions = [], isLoading } = useQuery({
     queryKey: ["assertions"],
@@ -95,15 +102,23 @@ export default function AssertionsPage() {
 
       if (!recipientId) throw new Error("Please select a learner or enter an email");
 
-      const { error } = await supabase.from("assertions").insert({
+      const { data: inserted, error } = await supabase.from("assertions").insert({
         recipient_id: recipientId,
         badge_class_id: form.badge_class_id,
         evidence_url: form.evidence_url || null,
-      });
+      }).select("id").single();
       if (error) throw error;
 
-      // Send notification
+      // Audit log
       const badgeName = badges.find((b) => b.id === form.badge_class_id)?.name || "Badge";
+      const learner = learners.find((l) => l.user_id === recipientId);
+      await logAuditAction("badge.issued", "assertion", inserted.id, {
+        badge_name: badgeName,
+        learner_name: learner?.full_name,
+        learner_email: learner?.email || form.email,
+      });
+
+      // Send notification
       try {
         await supabase.functions.invoke("send-badge-notification", {
           body: { recipientId, badgeName, evidenceUrl: form.evidence_url || null },
@@ -178,7 +193,7 @@ export default function AssertionsPage() {
     onError: (e: Error) => toast({ title: "CSV Error", description: e.message, variant: "destructive" }),
   });
 
-  // Revoke with reason
+  // Revoke with reason + audit
   const toggleRevoke = useMutation({
     mutationFn: async ({ id, revoked, reason }: { id: string; revoked: boolean; reason: string }) => {
       const { error } = await supabase.from("assertions").update({
@@ -186,18 +201,61 @@ export default function AssertionsPage() {
         revocation_reason: revoked ? (reason || "Revoked by admin") : null,
       }).eq("id", id);
       if (error) throw error;
+
+      const assertion = assertions.find((a: any) => a.id === id);
+      await logAuditAction(revoked ? "badge.revoked" : "badge.restored", "assertion", id, {
+        badge_name: assertion?.badge_classes?.name,
+        learner_name: assertion?.profile?.full_name,
+        reason: revoked ? reason : undefined,
+      });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["assertions"] }); setRevokeTarget(null); setRevokeReason(""); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // Delete
+  // Delete + audit
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const assertion = assertions.find((a: any) => a.id === id);
       const { error } = await supabase.from("assertions").delete().eq("id", id);
       if (error) throw error;
+      await logAuditAction("badge.deleted", "assertion", id, {
+        badge_name: assertion?.badge_classes?.name,
+        learner_name: assertion?.profile?.full_name,
+      });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["assertions"] }); setDeleteId(null); toast({ title: "Assertion deleted" }); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // Invite mutation
+  const inviteMutation = useMutation({
+    mutationFn: async () => {
+      if (!inviteForm.email || !inviteForm.badge_class_id) throw new Error("Email and badge are required");
+
+      const { data, error } = await supabase.from("badge_invites").insert({
+        email: inviteForm.email.trim().toLowerCase(),
+        badge_class_id: inviteForm.badge_class_id,
+        evidence_url: inviteForm.evidence_url || null,
+        invited_by: user!.id,
+      }).select("invite_token").single();
+      if (error) throw error;
+
+      const badgeName = badges.find((b) => b.id === inviteForm.badge_class_id)?.name || "Badge";
+      await logAuditAction("invite.sent", "badge_invite", null, {
+        email: inviteForm.email,
+        badge_name: badgeName,
+      });
+
+      return data;
+    },
+    onSuccess: (data) => {
+      const claimUrl = `${window.location.origin}/claim/${data.invite_token}`;
+      navigator.clipboard.writeText(claimUrl);
+      qc.invalidateQueries({ queryKey: ["assertions"] });
+      setInviteOpen(false);
+      toast({ title: "Invite created! Link copied to clipboard.", description: claimUrl });
+    },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
@@ -231,6 +289,7 @@ export default function AssertionsPage() {
           <p className="mt-1 text-muted-foreground">Manage issued badges</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => { setInviteForm({ email: "", badge_class_id: "", evidence_url: "" }); setInviteOpen(true); }}><Send className="mr-2 h-4 w-4" />Send Invite</Button>
           <Button variant="outline" onClick={() => setCsvOpen(true)}><Upload className="mr-2 h-4 w-4" />CSV Import</Button>
           <Button onClick={() => { setForm({ recipient_id: "", badge_class_id: "", evidence_url: "", email: "" }); setIssueMode("select"); setIssueOpen(true); }}><Plus className="mr-2 h-4 w-4" />Issue Badge</Button>
         </div>
@@ -416,6 +475,30 @@ export default function AssertionsPage() {
               <p className="mt-1 text-xs text-muted-foreground">Columns: email (or user_id), evidence_url (optional)</p>
             </div>
             <DialogFooter><Button type="submit" disabled={csvMutation.isPending || !csvBadgeId || !csvFile}>{csvMutation.isPending ? "Importing…" : "Import"}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Invite */}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Send Badge Invite</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Send a claim link to someone who doesn't have an account yet. They'll sign up and claim the badge.</p>
+          <form onSubmit={(e) => { e.preventDefault(); inviteMutation.mutate(); }} className="space-y-4">
+            <div><Label>Email *</Label><Input type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} placeholder="recipient@example.com" required /></div>
+            <div>
+              <Label>Badge *</Label>
+              <Select value={inviteForm.badge_class_id} onValueChange={(v) => setInviteForm({ ...inviteForm, badge_class_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select badge" /></SelectTrigger>
+                <SelectContent>{badges.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Evidence URL</Label><Input value={inviteForm.evidence_url} onChange={(e) => setInviteForm({ ...inviteForm, evidence_url: e.target.value })} placeholder="https://…" /></div>
+            <DialogFooter>
+              <Button type="submit" disabled={inviteMutation.isPending || !inviteForm.email || !inviteForm.badge_class_id}>
+                {inviteMutation.isPending ? "Sending…" : "Create Invite Link"}
+              </Button>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

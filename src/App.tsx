@@ -16,9 +16,11 @@ import BadgesPage from "./pages/admin/BadgesPage";
 import AssertionsPage from "./pages/admin/AssertionsPage";
 import LearnersPage from "./pages/admin/LearnersPage";
 import AnalyticsPage from "./pages/admin/AnalyticsPage";
+import AuditLogPage from "./pages/admin/AuditLogPage";
 import Settings from "./pages/Settings";
 import Verify from "./pages/Verify";
 import PublicProfile from "./pages/PublicProfile";
+import ClaimBadge from "./pages/ClaimBadge";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,7 @@ const App = () => (
               <Route path="/signup" element={<Signup />} />
               <Route path="/verify/:assertionId" element={<Verify />} />
               <Route path="/profile/:userId" element={<PublicProfile />} />
+              <Route path="/claim/:token" element={<ClaimBadge />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
@@ -45,6 +48,7 @@ const App = () => (
               <Route path="/admin/assertions" element={<ProtectedRoute requireAdmin><AssertionsPage /></ProtectedRoute>} />
               <Route path="/admin/learners" element={<ProtectedRoute requireAdmin><LearnersPage /></ProtectedRoute>} />
               <Route path="/admin/analytics" element={<ProtectedRoute requireAdmin><AnalyticsPage /></ProtectedRoute>} />
+              <Route path="/admin/audit-log" element={<ProtectedRoute requireAdmin><AuditLogPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

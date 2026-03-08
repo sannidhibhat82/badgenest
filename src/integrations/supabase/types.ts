@@ -61,6 +61,36 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+        }
+        Relationships: []
+      }
       badge_categories: {
         Row: {
           color: string
@@ -158,6 +188,53 @@ export type Database = {
             columns: ["issuer_id"]
             isOneToOne: false
             referencedRelation: "issuers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      badge_invites: {
+        Row: {
+          badge_class_id: string
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          email: string
+          evidence_url: string | null
+          id: string
+          invite_token: string
+          invited_by: string
+          status: string
+        }
+        Insert: {
+          badge_class_id: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          email: string
+          evidence_url?: string | null
+          id?: string
+          invite_token?: string
+          invited_by: string
+          status?: string
+        }
+        Update: {
+          badge_class_id?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          email?: string
+          evidence_url?: string | null
+          id?: string
+          invite_token?: string
+          invited_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badge_invites_badge_class_id_fkey"
+            columns: ["badge_class_id"]
+            isOneToOne: false
+            referencedRelation: "badge_classes"
             referencedColumns: ["id"]
           },
         ]

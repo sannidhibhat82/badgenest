@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Award,
   Calendar,
@@ -19,6 +21,8 @@ import {
   XCircle,
   Clock,
   Link as LinkIcon,
+  Code,
+  Copy,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -52,6 +56,8 @@ export default function BadgeDetailModal({
   onOpenChange,
   assertion,
 }: BadgeDetailModalProps) {
+  const [embedTab, setEmbedTab] = useState<string>("html");
+
   if (!assertion) return null;
 
   const isExpired =
@@ -63,6 +69,16 @@ export default function BadgeDetailModal({
     : "active";
 
   const verifyUrl = `${window.location.origin}/verify/${assertion.id}`;
+
+  const embedHtml = `<a href="${verifyUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;color:#1a202c;font-family:sans-serif;">
+  ${assertion.badge_class.image_url ? `<img src="${assertion.badge_class.image_url}" alt="${assertion.badge_class.name}" style="width:40px;height:40px;border-radius:6px;object-fit:contain;" />` : ""}
+  <span>
+    <strong style="display:block;font-size:14px;">${assertion.badge_class.name}</strong>
+    <span style="font-size:12px;color:#718096;">Issued by ${assertion.badge_class.issuer.name}</span>
+  </span>
+</a>`;
+
+  const embedMarkdown = `[![${assertion.badge_class.name}](${assertion.badge_class.image_url || ""})](${verifyUrl})`;
 
   const shareToLinkedIn = () => {
     const params = new URLSearchParams({
@@ -80,14 +96,12 @@ export default function BadgeDetailModal({
       params.set("expirationYear", String(expDate.getFullYear()));
       params.set("expirationMonth", String(expDate.getMonth() + 1));
     }
-    const url = `https://www.linkedin.com/profile/add?${params.toString()}`;
-    window.open(url, "_blank");
+    window.open(`https://www.linkedin.com/profile/add?${params.toString()}`, "_blank");
   };
 
   const shareToTwitter = () => {
     const text = `I just earned the "${assertion.badge_class.name}" badge from ${assertion.badge_class.issuer.name}! 🏆`;
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(verifyUrl)}`;
-    window.open(url, "_blank", "noopener,noreferrer,width=600,height=500");
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(verifyUrl)}`, "_blank", "noopener,noreferrer,width=600,height=500");
   };
 
   const copyLink = async () => {
@@ -95,48 +109,32 @@ export default function BadgeDetailModal({
     toast.success("Verification link copied!");
   };
 
-  const StatusIcon =
-    status === "active"
-      ? CheckCircle2
-      : status === "expired"
-      ? Clock
-      : XCircle;
+  const copyEmbed = async (code: string) => {
+    await navigator.clipboard.writeText(code);
+    toast.success("Embed code copied!");
+  };
+
+  const StatusIcon = status === "active" ? CheckCircle2 : status === "expired" ? Clock : XCircle;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="sr-only">Badge Details</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col items-center text-center">
           {assertion.badge_class.image_url ? (
-            <img
-              src={assertion.badge_class.image_url}
-              alt={assertion.badge_class.name}
-              className="h-32 w-32 rounded-2xl object-cover shadow-lg"
-            />
+            <img src={assertion.badge_class.image_url} alt={assertion.badge_class.name} className="h-32 w-32 rounded-2xl object-cover shadow-lg" />
           ) : (
             <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-primary/10 shadow-lg">
               <Award className="h-14 w-14 text-primary" />
             </div>
           )}
-
           <h2 className="mt-4 text-xl font-bold">{assertion.badge_class.name}</h2>
-
           <div className="mt-2 flex items-center gap-2">
-            <Badge
-              variant={
-                status === "active"
-                  ? "default"
-                  : status === "expired"
-                  ? "secondary"
-                  : "destructive"
-              }
-              className="capitalize"
-            >
-              <StatusIcon className="mr-1 h-3 w-3" />
-              {status}
+            <Badge variant={status === "active" ? "default" : status === "expired" ? "secondary" : "destructive"} className="capitalize">
+              <StatusIcon className="mr-1 h-3 w-3" />{status}
             </Badge>
           </div>
         </div>
@@ -146,76 +144,39 @@ export default function BadgeDetailModal({
         <div className="space-y-3 text-sm">
           <div className="flex items-start gap-3">
             <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <div>
-              <p className="font-medium">Issued by</p>
-              <p className="text-muted-foreground">
-                {assertion.badge_class.issuer.name}
-              </p>
-            </div>
+            <div><p className="font-medium">Issued by</p><p className="text-muted-foreground">{assertion.badge_class.issuer.name}</p></div>
           </div>
-
           <div className="flex items-start gap-3">
             <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <div>
               <p className="font-medium">Issued on</p>
-              <p className="text-muted-foreground">
-                {format(new Date(assertion.issued_at), "MMMM d, yyyy")}
-              </p>
+              <p className="text-muted-foreground">{format(new Date(assertion.issued_at), "MMMM d, yyyy")}</p>
             </div>
           </div>
-
           {assertion.expires_at && (
             <div className="flex items-start gap-3">
               <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Expires</p>
-                <p className="text-muted-foreground">
-                  {format(new Date(assertion.expires_at), "MMMM d, yyyy")}
-                </p>
-              </div>
+              <div><p className="font-medium">Expires</p><p className="text-muted-foreground">{format(new Date(assertion.expires_at), "MMMM d, yyyy")}</p></div>
             </div>
           )}
-
           {assertion.badge_class.description && (
-            <div>
-              <p className="font-medium">Description</p>
-              <p className="mt-1 text-muted-foreground">
-                {assertion.badge_class.description}
-              </p>
-            </div>
+            <div><p className="font-medium">Description</p><p className="mt-1 text-muted-foreground">{assertion.badge_class.description}</p></div>
           )}
-
           {assertion.badge_class.criteria && (
-            <div>
-              <p className="font-medium">Criteria</p>
-              <p className="mt-1 text-muted-foreground">
-                {assertion.badge_class.criteria}
-              </p>
-            </div>
+            <div><p className="font-medium">Criteria</p><p className="mt-1 text-muted-foreground">{assertion.badge_class.criteria}</p></div>
           )}
-
           {assertion.revoked && assertion.revocation_reason && (
             <div className="rounded-md bg-destructive/10 p-3">
               <p className="font-medium text-destructive">Revocation Reason</p>
-              <p className="mt-1 text-sm text-destructive/80">
-                {assertion.revocation_reason}
-              </p>
+              <p className="mt-1 text-sm text-destructive/80">{assertion.revocation_reason}</p>
             </div>
           )}
-
           {assertion.evidence_url && (
             <div className="flex items-start gap-3">
               <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <div>
                 <p className="font-medium">Evidence</p>
-                <a
-                  href={assertion.evidence_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  View evidence →
-                </a>
+                <a href={assertion.evidence_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">View evidence →</a>
               </div>
             </div>
           )}
@@ -223,25 +184,44 @@ export default function BadgeDetailModal({
 
         <Separator className="my-4" />
 
+        {/* Share */}
         <div>
-          <p className="mb-3 text-center text-sm font-medium">
-            <Share2 className="mr-1 inline h-4 w-4" />
-            Share this badge
-          </p>
+          <p className="mb-3 text-center text-sm font-medium"><Share2 className="mr-1 inline h-4 w-4" />Share this badge</p>
           <div className="flex items-center justify-center gap-2">
-            <Button variant="outline" size="sm" onClick={shareToLinkedIn}>
-              <Linkedin className="mr-2 h-4 w-4" />
-              LinkedIn
-            </Button>
-            <Button variant="outline" size="sm" onClick={shareToTwitter}>
-              <Twitter className="mr-2 h-4 w-4" />
-              Twitter
-            </Button>
-            <Button variant="outline" size="sm" onClick={copyLink}>
-              <LinkIcon className="mr-2 h-4 w-4" />
-              Copy Link
-            </Button>
+            <Button variant="outline" size="sm" onClick={shareToLinkedIn}><Linkedin className="mr-2 h-4 w-4" />LinkedIn</Button>
+            <Button variant="outline" size="sm" onClick={shareToTwitter}><Twitter className="mr-2 h-4 w-4" />Twitter</Button>
+            <Button variant="outline" size="sm" onClick={copyLink}><LinkIcon className="mr-2 h-4 w-4" />Copy Link</Button>
           </div>
+        </div>
+
+        <Separator className="my-4" />
+
+        {/* Embed Widget */}
+        <div>
+          <p className="mb-3 text-center text-sm font-medium"><Code className="mr-1 inline h-4 w-4" />Embed this badge</p>
+          <Tabs value={embedTab} onValueChange={setEmbedTab}>
+            <TabsList className="w-full">
+              <TabsTrigger value="html" className="flex-1">HTML</TabsTrigger>
+              <TabsTrigger value="markdown" className="flex-1">Markdown</TabsTrigger>
+            </TabsList>
+            <TabsContent value="html">
+              <div className="relative">
+                <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto max-h-32">{embedHtml}</pre>
+                <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => copyEmbed(embedHtml)}>
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+            </TabsContent>
+            <TabsContent value="markdown">
+              <div className="relative">
+                <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto">{embedMarkdown}</pre>
+                <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => copyEmbed(embedMarkdown)}>
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+          <p className="mt-2 text-[11px] text-muted-foreground text-center">Paste this code into your website, email signature, or portfolio.</p>
         </div>
       </DialogContent>
     </Dialog>
