@@ -21,6 +21,7 @@ export default function LearnerLayout({ children }: { children: ReactNode }) {
           <img src={evolveLogo} alt="Evolve Careers" className="h-8 w-auto" />
         </Link>
         <div className="flex items-center gap-2">
+          <NotificationCenter />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
