@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { CheckCircle, XCircle, AlertTriangle, Copy, ExternalLink, Calendar, User, Building2, ShieldCheck, ShieldX, ChevronDown, Download, Code } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 import { useState, useEffect } from "react";
 
 function getStatus(assertion: any) {
