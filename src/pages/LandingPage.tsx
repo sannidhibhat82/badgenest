@@ -227,7 +227,7 @@ export default function LandingPage() {
                 Ready to start issuing badges?
               </h2>
               <p className="text-primary-foreground/70 max-w-lg mx-auto">
-                Join organizations using Evolve Careers to issue verifiable, portable digital credentials.
+                Join organizations using BadgeNest to issue verifiable, portable digital credentials.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                 <Button
