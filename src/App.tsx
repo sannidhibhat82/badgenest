@@ -38,10 +38,13 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <ErrorBoundary>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify/:assertionId" element={<Verify />} />
               <Route path="/profile/:userId" element={<PublicProfile />} />
               <Route path="/claim/:token" element={<ClaimBadge />} />
