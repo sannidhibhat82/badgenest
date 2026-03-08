@@ -120,12 +120,13 @@ export default function LearnerDashboard() {
         <p className="mt-1 text-muted-foreground">Here are your earned badges</p>
 
         {/* Stats */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
           {[
             { label: "Total", value: stats.total, color: "bg-primary/10 text-primary" },
             { label: "Active", value: stats.active, color: "bg-green-100 text-green-700" },
             { label: "Expired", value: stats.expired, color: "bg-amber-100 text-amber-700" },
             { label: "Revoked", value: stats.revoked, color: "bg-red-100 text-red-700" },
+            { label: "Total Views", value: totalViews, color: "bg-blue-100 text-blue-700" },
           ].map((s) => (
             <div key={s.label} className={`rounded-lg p-4 ${s.color}`}>
               <p className="text-2xl font-bold">{s.value}</p>
