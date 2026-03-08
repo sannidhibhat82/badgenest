@@ -385,10 +385,10 @@ export default function Documentation() {
             </div>
 
             {/* ---- WHY EVOLVE ---- */}
-            <SectionHeading id="why-evolve">Why Evolve Careers?</SectionHeading>
+            <SectionHeading id="why-evolve">Why BadgeNest?</SectionHeading>
             <P>
               Credential platforms like Credly, Accredible, and Badgr have made digital badges
-              mainstream — but they come with trade-offs. Here's why organisations choose Evolve Careers
+              mainstream — but they come with trade-offs. Here's why organisations choose BadgeNest
               instead:
             </P>
             <div className="grid sm:grid-cols-2 gap-4 my-6">
