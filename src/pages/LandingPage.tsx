@@ -15,7 +15,7 @@ import {
   Lock,
   BarChart3,
 } from "lucide-react";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 
 const features = [
   {
