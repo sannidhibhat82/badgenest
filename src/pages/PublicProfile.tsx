@@ -18,7 +18,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { format } from "date-fns";
-import evolveLogo from "@/assets/evolve-logo.png";
+import badgenestLogo from "@/assets/badgenest-logo.png";
 
 function getStatus(a: { revoked: boolean; expires_at: string | null }) {
   if (a.revoked) return { label: "Revoked", variant: "destructive" as const, icon: XCircle };
