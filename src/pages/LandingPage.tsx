@@ -61,10 +61,10 @@ export default function LandingPage() {
   return (
     <>
       <Helmet>
-        <title>Evolve Careers — Digital Badge Platform</title>
+        <title>BadgeNest — Digital Badge Platform</title>
         <meta
           name="description"
-          content="Issue, earn, and verify tamper-proof digital badges. Open Badges compliant credentialing platform by Evolve Careers."
+          content="Issue, earn, and verify tamper-proof digital badges. Open Badges compliant credentialing platform by BadgeNest."
         />
       </Helmet>
 
