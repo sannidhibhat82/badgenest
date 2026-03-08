@@ -13,6 +13,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect");
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
