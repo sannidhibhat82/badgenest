@@ -331,7 +331,7 @@ export default function Documentation() {
               />
             </SheetContent>
           </Sheet>
-          <img src={evolveLogo} alt="Evolve Careers" className="h-6" />
+          <img src={badgenestLogo} alt="BadgeNest" className="h-6" />
           <span className="font-semibold text-foreground text-sm">
             Documentation
           </span>
