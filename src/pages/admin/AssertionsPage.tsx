@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Upload, ShieldCheck, ShieldX, ShieldAlert, Search, Trash2, ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { Plus, Upload, ShieldCheck, ShieldX, ShieldAlert, Search, Trash2, ChevronLeft, ChevronRight, Send, KeyRound } from "lucide-react";
 import { format } from "date-fns";
 import { logAuditAction } from "@/lib/audit";
 
@@ -282,6 +282,23 @@ export default function AssertionsPage() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  // Bulk sign unsigned assertions
+  const bulkSignMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("bulk-sign-assertions");
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["assertions"] });
+      toast({
+        title: `Signed ${data.signed} of ${data.total} assertion(s)`,
+        description: data.errors ? `${data.errors.length} error(s)` : "All assertions signed successfully",
+      });
+    },
+    onError: (e: Error) => toast({ title: "Bulk sign failed", description: e.message, variant: "destructive" }),
+  });
+
   const getStatus = (a: any) => {
     if (a.revoked) return { label: "Revoked", variant: "destructive" as const, icon: ShieldX };
     if (a.expires_at && new Date(a.expires_at) < new Date()) return { label: "Expired", variant: "secondary" as const, icon: ShieldAlert };
@@ -311,7 +328,10 @@ export default function AssertionsPage() {
           <h1 className="text-3xl font-bold">Assertions</h1>
           <p className="mt-1 text-muted-foreground">Manage issued badges</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => bulkSignMutation.mutate()} disabled={bulkSignMutation.isPending}>
+            <KeyRound className="mr-2 h-4 w-4" />{bulkSignMutation.isPending ? "Signing…" : "Sign All"}
+          </Button>
           <Button variant="outline" onClick={() => { setInviteForm({ email: "", badge_class_id: "", evidence_url: "" }); setInviteOpen(true); }}><Send className="mr-2 h-4 w-4" />Send Invite</Button>
           <Button variant="outline" onClick={() => setCsvOpen(true)}><Upload className="mr-2 h-4 w-4" />CSV Import</Button>
           <Button onClick={() => { setForm({ recipient_id: "", badge_class_id: "", evidence_url: "", email: "" }); setIssueMode("select"); setIssueOpen(true); }}><Plus className="mr-2 h-4 w-4" />Issue Badge</Button>
