@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Upload, ShieldCheck, ShieldX, ShieldAlert, Search, Trash2, ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { Plus, Upload, ShieldCheck, ShieldX, ShieldAlert, Search, Trash2, ChevronLeft, ChevronRight, Send, KeyRound } from "lucide-react";
 import { format } from "date-fns";
 import { logAuditAction } from "@/lib/audit";
 
