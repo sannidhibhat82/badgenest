@@ -328,7 +328,10 @@ export default function AssertionsPage() {
           <h1 className="text-3xl font-bold">Assertions</h1>
           <p className="mt-1 text-muted-foreground">Manage issued badges</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => bulkSignMutation.mutate()} disabled={bulkSignMutation.isPending}>
+            <KeyRound className="mr-2 h-4 w-4" />{bulkSignMutation.isPending ? "Signing…" : "Sign All"}
+          </Button>
           <Button variant="outline" onClick={() => { setInviteForm({ email: "", badge_class_id: "", evidence_url: "" }); setInviteOpen(true); }}><Send className="mr-2 h-4 w-4" />Send Invite</Button>
           <Button variant="outline" onClick={() => setCsvOpen(true)}><Upload className="mr-2 h-4 w-4" />CSV Import</Button>
           <Button onClick={() => { setForm({ recipient_id: "", badge_class_id: "", evidence_url: "", email: "" }); setIssueMode("select"); setIssueOpen(true); }}><Plus className="mr-2 h-4 w-4" />Issue Badge</Button>
