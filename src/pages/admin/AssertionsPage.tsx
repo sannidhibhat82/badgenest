@@ -282,6 +282,23 @@ export default function AssertionsPage() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  // Bulk sign unsigned assertions
+  const bulkSignMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("bulk-sign-assertions");
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["assertions"] });
+      toast({
+        title: `Signed ${data.signed} of ${data.total} assertion(s)`,
+        description: data.errors ? `${data.errors.length} error(s)` : "All assertions signed successfully",
+      });
+    },
+    onError: (e: Error) => toast({ title: "Bulk sign failed", description: e.message, variant: "destructive" }),
+  });
+
   const getStatus = (a: any) => {
     if (a.revoked) return { label: "Revoked", variant: "destructive" as const, icon: ShieldX };
     if (a.expires_at && new Date(a.expires_at) < new Date()) return { label: "Expired", variant: "secondary" as const, icon: ShieldAlert };
