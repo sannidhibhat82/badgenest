@@ -522,6 +522,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_admin_dashboard_stats: { Args: never; Returns: Json }
       get_invite_by_token: {
         Args: { _token: string }
         Returns: {
