@@ -13,41 +13,22 @@ export default function AdminDashboard() {
   const { data: stats } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
-      const [badgesRes, assertionsRes, learnersRes] = await Promise.all([
-        supabase.from("badge_classes").select("id", { count: "exact", head: true }),
-        supabase.from("assertions").select("id, revoked, issued_at, recipient_id, badge_classes(name)"),
-        supabase.from("profiles").select("user_id", { count: "exact", head: true }),
-      ]);
-      const assertions = assertionsRes.data ?? [];
-
-      const recentAssertions = assertions.slice(0, 10);
-      const recipientIds = [...new Set(recentAssertions.map((a) => a.recipient_id))];
-      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", recipientIds);
-      const profileMap = Object.fromEntries((profiles ?? []).map((p) => [p.user_id, p]));
-
-      const monthlyData: Record<string, number> = {};
-      const now = new Date();
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        monthlyData[format(d, "MMM yyyy")] = 0;
-      }
-      for (const a of assertions) {
-        const key = format(new Date(a.issued_at), "MMM yyyy");
-        if (key in monthlyData) monthlyData[key]++;
-      }
-      const chartData = Object.entries(monthlyData).map(([month, count]) => ({ month, count }));
-
+      const { data, error } = await supabase.rpc("get_admin_dashboard_stats");
+      if (error) throw error;
+      const d = data as any;
       return {
-        totalBadges: badgesRes.count ?? 0,
-        active: assertions.filter((a) => !a.revoked).length,
-        revoked: assertions.filter((a) => a.revoked).length,
-        totalLearners: learnersRes.count ?? 0,
-        recent: recentAssertions.map((a: any) => ({
-          ...a,
-          learnerName: profileMap[a.recipient_id]?.full_name || "Unknown",
-          badgeName: a.badge_classes?.name || "Unknown",
+        totalBadges: d.total_badges ?? 0,
+        active: d.active_assertions ?? 0,
+        revoked: d.revoked_assertions ?? 0,
+        totalLearners: d.total_learners ?? 0,
+        chartData: (d.chart_data ?? []) as { month: string; count: number }[],
+        recent: (d.recent ?? []).map((r: any) => ({
+          id: r.id,
+          issued_at: r.issued_at,
+          revoked: r.revoked,
+          learnerName: r.learner_name,
+          badgeName: r.badge_name,
         })),
-        chartData,
       };
     },
   });
