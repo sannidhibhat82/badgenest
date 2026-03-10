@@ -26,6 +26,7 @@ const navGroups = [
     items: [
       { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
       { label: "Audit Log", href: "/admin/audit-log", icon: FileText },
+      { label: "Roles", href: "/admin/roles", icon: ShieldCheck },
     ],
   },
   {
