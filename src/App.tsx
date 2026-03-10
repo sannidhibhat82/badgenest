@@ -25,6 +25,7 @@ const AnalyticsPage = lazy(() => import("./pages/admin/AnalyticsPage"));
 const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage"));
 const ApiKeysPage = lazy(() => import("./pages/admin/ApiKeysPage"));
 const WebhooksPage = lazy(() => import("./pages/admin/WebhooksPage"));
+const RolesPage = lazy(() => import("./pages/admin/RolesPage"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Verify = lazy(() => import("./pages/Verify"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
