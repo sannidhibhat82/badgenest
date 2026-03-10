@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
           }
         : null,
       recipient: profile
-        ? { full_name: profile.full_name, email: profile.email }
+        ? { full_name: profile.full_name }
         : null,
       signed_at: new Date().toISOString(),
     };

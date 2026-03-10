@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
             ? { id: issuer.id, name: issuer.name, email: issuer.email, website: issuer.website, logo_url: issuer.logo_url }
             : null,
           recipient: profile
-            ? { full_name: profile.full_name, email: profile.email }
+            ? { full_name: profile.full_name }
             : null,
           signed_at: new Date().toISOString(),
         };
