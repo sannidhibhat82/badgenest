@@ -523,9 +523,9 @@ export default function MigrationGuide() {
 
           {/* Important notes */}
           <section id="notes">
-            <Card className="border-yellow-500/30 bg-yellow-500/5">
+            <Card className="border-destructive/30 bg-destructive/5">
               <CardContent className="p-6 flex gap-4">
-                <AlertTriangle className="h-6 w-6 text-yellow-600 shrink-0 mt-0.5" />
+                <AlertTriangle className="h-6 w-6 text-destructive shrink-0 mt-0.5" />
                 <div className="text-sm text-muted-foreground space-y-2">
                   <p className="font-semibold text-foreground">Important Notes</p>
                   <ul className="space-y-1 list-disc list-inside">
