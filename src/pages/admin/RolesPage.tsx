@@ -115,12 +115,12 @@ export default function RolesPage() {
         .eq("role", "admin");
       if (error) throw error;
 
-      await logAuditAction({
-        action: "role.demoted",
-        entityType: "user_roles",
-        entityId: targetUserId,
-        details: { role: "admin", action: "removed" },
-      });
+      await logAuditAction(
+        "role.demoted",
+        "user_roles",
+        targetUserId,
+        { role: "admin", action: "removed" },
+      );
     },
     onSuccess: () => {
       toast.success("Admin role removed");
