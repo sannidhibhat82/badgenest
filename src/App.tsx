@@ -25,6 +25,7 @@ const AnalyticsPage = lazy(() => import("./pages/admin/AnalyticsPage"));
 const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage"));
 const ApiKeysPage = lazy(() => import("./pages/admin/ApiKeysPage"));
 const WebhooksPage = lazy(() => import("./pages/admin/WebhooksPage"));
+const RolesPage = lazy(() => import("./pages/admin/RolesPage"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Verify = lazy(() => import("./pages/Verify"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
@@ -82,6 +83,7 @@ const App = () => (
               <Route path="/admin/audit-log" element={<ProtectedRoute requireAdmin><AuditLogPage /></ProtectedRoute>} />
               <Route path="/admin/api-keys" element={<ProtectedRoute requireAdmin><ApiKeysPage /></ProtectedRoute>} />
               <Route path="/admin/webhooks" element={<ProtectedRoute requireAdmin><WebhooksPage /></ProtectedRoute>} />
+              <Route path="/admin/roles" element={<ProtectedRoute requireAdmin><RolesPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </Suspense>

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { LayoutDashboard, Award, Building2, Users, BarChart3, LogOut, Settings, Shield, Menu, FileText, Key, Webhook, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Award, Building2, Users, BarChart3, LogOut, Settings, Shield, Menu, FileText, Key, Webhook, ChevronDown, ShieldCheck } from "lucide-react";
 import badgenestLogo from "@/assets/badgenest-logo.png";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ const navGroups = [
     items: [
       { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
       { label: "Audit Log", href: "/admin/audit-log", icon: FileText },
+      { label: "Roles", href: "/admin/roles", icon: ShieldCheck },
     ],
   },
   {
