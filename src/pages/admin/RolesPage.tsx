@@ -85,12 +85,12 @@ export default function RolesPage() {
         .insert({ user_id: profile.user_id, role: "admin" as const });
       if (insertErr) throw insertErr;
 
-      await logAuditAction({
-        action: "role.promoted",
-        entityType: "user_roles",
-        entityId: profile.user_id,
-        details: { email, role: "admin", promoted_name: profile.full_name },
-      });
+      await logAuditAction(
+        "role.promoted",
+        "user_roles",
+        profile.user_id,
+        { email, role: "admin", promoted_name: profile.full_name },
+      );
 
       return profile;
     },
