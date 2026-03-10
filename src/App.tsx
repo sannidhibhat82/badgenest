@@ -30,6 +30,7 @@ const Verify = lazy(() => import("./pages/Verify"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const ClaimBadge = lazy(() => import("./pages/ClaimBadge"));
 const Documentation = lazy(() => import("./pages/Documentation"));
+const MigrationGuide = lazy(() => import("./pages/MigrationGuide"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
