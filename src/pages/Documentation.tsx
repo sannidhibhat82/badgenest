@@ -554,9 +554,9 @@ export default function Documentation() {
                     ["Styling", "Tailwind CSS + shadcn/ui", "Design system with semantic tokens"],
                     ["State", "TanStack React Query", "Server-state caching & synchronisation"],
                     ["Routing", "React Router v6", "Client-side routing with protected routes"],
-                    ["Backend", "Lovable Cloud (Supabase)", "Postgres DB, Auth, Storage, Edge Functions"],
+                    ["Backend", "Next.js API", "Node.js, JWT auth, local uploads"],
                     ["Edge Functions", "Deno (TypeScript)", "Serverless API, signing, notifications"],
-                    ["Auth", "Supabase Auth", "Email/password, session management, password reset"],
+                    ["Auth", "JWT (local)", "Email/password, session via token"],
                     ["Security", "RLS + RBAC + HMAC", "Row-level security, role checks, signed metadata"],
                   ].map(([layer, tech, purpose], i) => (
                     <TableRow key={i}>

@@ -140,12 +140,10 @@ export default function MigrationGuide() {
                   <CardTitle className="text-base">Backend</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm space-y-1">
-                  <TechRow label="Platform" value="Supabase (PostgreSQL)" />
-                  <TechRow label="Database" value="PostgreSQL 15+" />
-                  <TechRow label="Auth" value="Supabase Auth (JWT, email/password)" />
-                  <TechRow label="Edge Functions" value="Deno runtime (TypeScript)" />
-                  <TechRow label="File Storage" value="Supabase Storage (S3-compatible)" />
-                  <TechRow label="Realtime" value="Supabase Realtime (WebSocket)" />
+                  <TechRow label="Platform" value="Next.js API (Node.js)" />
+                  <TechRow label="Database" value="Microsoft SQL Server" />
+                  <TechRow label="Auth" value="JWT (email/password, local)" />
+                  <TechRow label="File Storage" value="Local filesystem (uploads)" />
                   <TechRow label="Language" value="TypeScript + SQL" />
                 </CardContent>
               </Card>
@@ -171,13 +169,13 @@ export default function MigrationGuide() {
 │                   React Router v6                        │
 │  /login  /signup  /dashboard  /admin/*  /verify/:id      │
 ├──────────────────────────────────────────────────────────┤
-│               Supabase JS Client SDK                     │
-│         Auth · Database · Storage · Functions            │
+│                   REST API client                         │
+│         Auth (JWT) · API routes (Next.js)                 │
 ├──────────────────────────────────────────────────────────┤
-│                Supabase Backend Layer                     │
+│                  Next.js Backend (API)                    │
 │  ┌────────────┬──────────┬───────────┬────────────────┐  │
-│  │ PostgreSQL │   Auth   │  Storage  │ Edge Functions  │  │
-│  │  (RLS)     │  (JWT)   │  (S3)    │  (Deno)        │  │
+│  │ SQL Server │ JWT Auth │  Uploads  │  API Routes    │  │
+│  │  (MSSQL)   │ (bcrypt) │ (local)   │  (Next.js)     │  │
 │  └────────────┴──────────┴───────────┴────────────────┘  │
 └──────────────────────────────────────────────────────────┘`}
                 </pre>
@@ -199,8 +197,8 @@ export default function MigrationGuide() {
                   <li>src/pages/admin/* — Admin pages</li>
                   <li>src/contexts/ — Auth state</li>
                   <li>src/layouts/ — Shell layouts</li>
-                  <li>supabase/functions/ — Edge fns</li>
-                  <li>supabase/migrations/ — DB schema</li>
+                  <li>backend/pages/api/ — API routes</li>
+                  <li>backend/database/schema.sql — DB schema</li>
                 </ul>
               </div>
               <div className="rounded-lg border p-4">
@@ -227,15 +225,14 @@ export default function MigrationGuide() {
             <SectionCard icon={CheckCircle} title="Fully Portable — No Vendor Lock-in">
               <p>
                 The entire codebase is a standard <strong>React + Vite + TypeScript</strong> application
-                backed by <strong>Supabase (PostgreSQL)</strong>. There are no proprietary APIs, custom
-                runtimes, or locked-in services. The project can be exported, version-controlled via Git,
+                backed by <strong>Next.js API and Microsoft SQL Server</strong>. There are no proprietary APIs or locked-in services. The project can be exported, version-controlled via Git,
                 and deployed to any infrastructure.
               </p>
               <ul className="mt-3 space-y-2 list-disc list-inside">
                 <li>Frontend: Standard <code className="text-xs bg-muted px-1 rounded">npm run build</code> produces a static <code className="text-xs bg-muted px-1 rounded">dist/</code> folder</li>
-                <li>Backend: All SQL migrations are in <code className="text-xs bg-muted px-1 rounded">supabase/migrations/</code></li>
-                <li>Edge Functions: Standard Deno/TypeScript, deployable via Supabase CLI</li>
-                <li>No proprietary SDKs — uses the open-source <code className="text-xs bg-muted px-1 rounded">@supabase/supabase-js</code> client</li>
+                <li>Backend: Schema is in <code className="text-xs bg-muted px-1 rounded">backend/database/schema.sql</code></li>
+                <li>Backend: Next.js API routes, JWT auth, local file uploads</li>
+                <li>No proprietary SDKs — REST API and JWT auth</li>
               </ul>
             </SectionCard>
           </section>
@@ -253,16 +250,13 @@ export default function MigrationGuide() {
               <SectionCard icon={FileCode} title="Schema Export">
                 <p>
                   All database schema changes are captured as sequential SQL migration files in{" "}
-                  <code className="text-xs bg-muted px-1 rounded">supabase/migrations/</code>. These include table
+                  <code className="text-xs bg-muted px-1 rounded">backend/database/schema.sql</code>. This includes table
                   creation, RLS policies, triggers, and database functions.
                 </p>
                 <div className="mt-3 rounded-md bg-muted/50 p-3 font-mono text-xs">
-                  <p># Apply migrations to a new Supabase instance</p>
-                  <p>supabase db push</p>
-                  <p className="mt-2"># Or apply directly with psql</p>
-                  <p>psql $DATABASE_URL -f supabase/migrations/*.sql</p>
-                  <p className="mt-2"># Export existing data</p>
-                  <p>pg_dump --data-only --no-owner $DATABASE_URL &gt; data_backup.sql</p>
+                  <p># Apply schema to SQL Server</p>
+                  <p>sqlcmd -S localhost -d badgenest -i backend/database/schema.sql</p>
+                  <p className="mt-2"># Or run schema.sql in SSMS / Azure Data Studio</p>
                 </div>
               </SectionCard>
 
@@ -273,7 +267,7 @@ export default function MigrationGuide() {
                 <CardContent>
                   <div className="grid gap-2 md:grid-cols-2 text-sm">
                     {[
-                      { name: "profiles", desc: "User profile data (linked to auth.users)" },
+                      { name: "users", desc: "User accounts and profile data" },
                       { name: "user_roles", desc: "RBAC roles (admin, learner)" },
                       { name: "issuers", desc: "Badge-issuing organizations" },
                       { name: "badge_classes", desc: "Badge templates/definitions" },
@@ -311,7 +305,7 @@ export default function MigrationGuide() {
             <div className="grid gap-4 md:grid-cols-2">
               <SectionCard icon={Lock} title="Authentication">
                 <ul className="space-y-2">
-                  <li><strong>Method:</strong> Email/password via Supabase Auth</li>
+                  <li><strong>Method:</strong> Email/password, JWT (local)</li>
                   <li><strong>Sessions:</strong> JWT tokens with automatic refresh</li>
                   <li><strong>Password Reset:</strong> Email-based reset flow</li>
                   <li><strong>New User Trigger:</strong> Auto-creates profile + assigns learner role</li>
@@ -358,25 +352,23 @@ export default function MigrationGuide() {
               </SectionCard>
 
               <SectionCard icon={Database} title="Backend Deployment">
-                <p>Two options for the Supabase backend:</p>
+                <p>Running the backend locally:</p>
                 <div className="mt-3 space-y-3">
                   <div className="rounded-md border p-3">
-                    <p className="font-medium text-foreground text-sm">Option A: Supabase Cloud (Managed)</p>
+                    <p className="font-medium text-foreground text-sm">Option A: Local development</p>
                     <ul className="mt-1 text-xs space-y-1 list-disc list-inside">
-                      <li>Create a project at supabase.com</li>
-                      <li>Run <code className="bg-muted px-1 rounded">supabase db push</code> to apply migrations</li>
-                      <li>Deploy edge functions via <code className="bg-muted px-1 rounded">supabase functions deploy</code></li>
-                      <li>Update <code className="bg-muted px-1 rounded">VITE_SUPABASE_URL</code> and <code className="bg-muted px-1 rounded">VITE_SUPABASE_PUBLISHABLE_KEY</code></li>
+                      <li>Install and run Microsoft SQL Server locally or use a hosted instance</li>
+                      <li>Create a database and run <code className="bg-muted px-1 rounded">backend/database/schema.sql</code></li>
+                      <li>Configure <code className="bg-muted px-1 rounded">backend/.env</code> with DB_* and JWT_SECRET</li>
+                      <li>Set <code className="bg-muted px-1 rounded">VITE_API_URL</code> and configure <code className="bg-muted px-1 rounded">backend/.env</code> (DB_*, JWT_SECRET)</li>
                     </ul>
                   </div>
                   <div className="rounded-md border p-3">
-                    <p className="font-medium text-foreground text-sm">Option B: Self-Hosted Supabase (Docker)</p>
+                    <p className="font-medium text-foreground text-sm">Option B: Production</p>
                     <ul className="mt-1 text-xs space-y-1 list-disc list-inside">
-                      <li>Clone the Supabase Docker repo</li>
-                      <li>Run <code className="bg-muted px-1 rounded">docker compose up -d</code></li>
-                      <li>Apply migrations with psql or Supabase CLI</li>
-                      <li>Provides: PostgreSQL, GoTrue Auth, Storage API, Edge Runtime</li>
-                      <li>Minimum: 2 vCPU, 4 GB RAM, 40 GB SSD</li>
+                      <li>Deploy Next.js backend (Node host, Vercel, or Docker)</li>
+                      <li>Use hosted SQL Server or self-hosted MSSQL</li>
+                      <li>Run backend/database/schema.sql on your database</li>
                     </ul>
                   </div>
                 </div>
@@ -385,11 +377,8 @@ export default function MigrationGuide() {
               <SectionCard icon={HardDrive} title="Environment Variables">
                 <div className="rounded-md bg-muted/50 p-3 font-mono text-xs space-y-1">
                   <p># Required for the frontend</p>
-                  <p>VITE_SUPABASE_URL=https://your-instance.supabase.co</p>
-                  <p>VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...</p>
-                  <p className="mt-2"># Required for edge functions</p>
-                  <p>SUPABASE_SERVICE_ROLE_KEY=eyJ... (for HMAC signing)</p>
-                  <p>SUPABASE_URL=https://your-instance.supabase.co</p>
+                  <p>VITE_API_URL=http://localhost:3001</p>
+                  <p>Backend backend/.env: DB_SERVER=... DB_DATABASE=badgenest JWT_SECRET=...</p>
                 </div>
               </SectionCard>
             </div>
@@ -405,14 +394,9 @@ export default function MigrationGuide() {
             </h2>
 
             <SectionCard icon={GitBranch} title="Dev / Staging / Production">
-              <p>Use separate Supabase instances per environment with environment-specific <code className="text-xs bg-muted px-1 rounded">.env</code> files:</p>
-              <div className="mt-3 rounded-md bg-muted/50 p-3 font-mono text-xs space-y-1">
-                <p>.env.development → dev Supabase instance</p>
-                <p>.env.staging → staging Supabase instance</p>
-                <p>.env.production → production Supabase instance</p>
-              </div>
+              <p>Use separate .env files per environment (e.g. .env.development, .env.production) with different DB_* and JWT_SECRET.</p>
               <ul className="mt-3 space-y-1 list-disc list-inside">
-                <li>Each environment has its own PostgreSQL database, auth config, and storage buckets</li>
+                <li>Each environment can use its own database and secrets</li>
                 <li>Migrations are applied identically across all environments via CI/CD</li>
                 <li>Vite automatically loads the correct <code className="text-xs bg-muted px-1 rounded">.env.[mode]</code> file</li>
                 <li>Use <code className="text-xs bg-muted px-1 rounded">npm run build -- --mode staging</code> to target specific environments</li>
@@ -432,16 +416,16 @@ export default function MigrationGuide() {
             <div className="grid gap-4 md:grid-cols-2">
               <SectionCard icon={Database} title="Database Backups">
                 <ul className="space-y-2">
-                  <li><strong>Supabase Cloud:</strong> Automatic daily backups with point-in-time recovery (Pro plan)</li>
+                  <li><strong>SQL Server:</strong> Use your provider&apos;s backup or scheduled backups</li>
                   <li><strong>Self-hosted:</strong> Schedule <code className="text-xs bg-muted px-1 rounded">pg_dump</code> via cron</li>
-                  <li><strong>Schema:</strong> Always version-controlled in <code className="text-xs bg-muted px-1 rounded">supabase/migrations/</code></li>
+                  <li><strong>Schema:</strong> Version-controlled in <code className="text-xs bg-muted px-1 rounded">backend/database/schema.sql</code></li>
                 </ul>
               </SectionCard>
 
               <SectionCard icon={HardDrive} title="Storage & Assets">
                 <ul className="space-y-2">
                   <li>Three storage buckets: <code className="text-xs bg-muted px-1 rounded">badge-images</code>, <code className="text-xs bg-muted px-1 rounded">issuer-logos</code>, <code className="text-xs bg-muted px-1 rounded">avatars</code></li>
-                  <li>Export via Supabase Storage API or S3-compatible tools</li>
+                  <li>Export uploads from <code className="bg-muted px-1 rounded">backend/public/uploads</code></li>
                   <li>Self-hosted: Back up the storage volume alongside PostgreSQL</li>
                 </ul>
               </SectionCard>
@@ -471,9 +455,9 @@ export default function MigrationGuide() {
                   <p className="font-medium text-foreground text-sm mb-1">External Integration Points</p>
                   <ul className="list-disc list-inside text-xs space-y-1 mt-1">
                     <li><strong>Error Tracking:</strong> Add Sentry SDK for frontend error reporting</li>
-                    <li><strong>APM:</strong> Supabase provides built-in Prometheus metrics (self-hosted)</li>
+                    <li><strong>APM:</strong> Use Node.js monitoring (e.g. PM2, Datadog)</li>
                     <li><strong>Log Aggregation:</strong> Pipe PostgreSQL and Edge Function logs to ELK/Datadog</li>
-                    <li><strong>Uptime:</strong> Monitor the frontend URL + Supabase health endpoint</li>
+                    <li><strong>Uptime:</strong> Monitor the frontend and backend API URL</li>
                   </ul>
                 </div>
               </div>
@@ -493,12 +477,11 @@ export default function MigrationGuide() {
               <CardContent className="p-6">
                 <ol className="space-y-3 text-sm">
                   {[
-                    "Provision a Supabase instance (Cloud or self-hosted Docker)",
-                    "Apply all migrations: supabase db push or psql",
+                    "Provision SQL Server and run backend/database/schema.sql",
+                    "Apply schema: run backend/database/schema.sql against SQL Server",
                     "Create storage buckets: badge-images, issuer-logos, avatars",
-                    "Deploy edge functions: supabase functions deploy --all",
-                    "Set environment variables (VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY)",
-                    "Set edge function secrets (SUPABASE_SERVICE_ROLE_KEY)",
+                    "Start backend: npm run dev:backend",
+                    "Set VITE_API_URL and backend/.env (DB_*, JWT_SECRET)",
                     "Build frontend: npm run build",
                     "Deploy dist/ to static host with SPA fallback",
                     "Create initial admin user and assign admin role in user_roles table",
@@ -529,10 +512,10 @@ export default function MigrationGuide() {
                 <div className="text-sm text-muted-foreground space-y-2">
                   <p className="font-semibold text-foreground">Important Notes</p>
                   <ul className="space-y-1 list-disc list-inside">
-                    <li>The <code className="text-xs bg-muted px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code> is used for HMAC badge signing — keep it secret and rotate periodically.</li>
+                    <li>Keep <code className="text-xs bg-muted px-1 rounded">JWT_SECRET</code> and DB credentials secret; rotate periodically.</li>
                     <li>Storage buckets are configured as <strong>public read</strong>; uploads require authentication.</li>
                     <li>RLS policies enforce access control at the database level — never bypass them in production.</li>
-                    <li>Email delivery (password resets, notifications) requires configuring an SMTP provider in Supabase Auth settings.</li>
+                    <li>Password reset and email notifications require custom implementation (e.g. SMTP or a transactional email API).</li>
                     <li>For production, enable email confirmation on signup and configure rate limiting.</li>
                   </ul>
                 </div>

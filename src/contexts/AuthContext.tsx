@@ -1,18 +1,22 @@
-import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { auth as authApi } from "@/lib/api";
 
-type AppRole = Database["public"]["Enums"]["app_role"];
+export type AppRole = "admin" | "learner";
+
+interface AuthUser {
+  id: string;
+  email: string;
+}
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
+  session: { user: AuthUser } | null;
   loading: boolean;
   roles: AppRole[];
   isAdmin: boolean;
   profile: { full_name: string | null; avatar_url: string | null } | null;
   signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,79 +27,69 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   profile: null,
   signOut: async () => {},
+  refreshSession: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<{ user: AuthUser } | null>(null);
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
 
-  // Track which user ID we've already fetched to prevent duplicates
-  const fetchedUserIdRef = useRef<string | null>(null);
-  const initializedRef = useRef(false);
-
-  const fetchUserData = useCallback(async (userId: string) => {
-    // Skip if we already fetched for this user
-    if (fetchedUserIdRef.current === userId) return;
-    fetchedUserIdRef.current = userId;
-
-    const [rolesRes, profileRes] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", userId),
-      supabase.from("profiles").select("full_name, avatar_url").eq("user_id", userId).single(),
-    ]);
-    if (rolesRes.data) setRoles(rolesRes.data.map((r) => r.role));
-    if (profileRes.data) setProfile(profileRes.data);
+  const loadSession = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setUser(null);
+      setSession(null);
+      setRoles([]);
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
+    try {
+      const data = await authApi.session();
+      if (data.user) {
+        setUser(data.user);
+        setSession({ user: data.user });
+        setRoles((data.roles ?? []) as AppRole[]);
+        setProfile(data.profile ?? null);
+      } else {
+        localStorage.removeItem("token");
+        setUser(null);
+        setSession(null);
+        setRoles([]);
+        setProfile(null);
+      }
+    } catch {
+      localStorage.removeItem("token");
+      setUser(null);
+      setSession(null);
+      setRoles([]);
+      setProfile(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    // Get initial session first
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserData(session.user.id);
-      }
-      setLoading(false);
-      initializedRef.current = true;
-    });
+    loadSession();
+  }, [loadSession]);
 
-    // Then listen for changes (won't double-fetch due to fetchedUserIdRef)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          // Reset ref on sign-out/sign-in cycle
-          if (_event === "SIGNED_IN") {
-            fetchedUserIdRef.current = null;
-          }
-          setTimeout(() => fetchUserData(session.user.id), 0);
-        } else {
-          fetchedUserIdRef.current = null;
-          setRoles([]);
-          setProfile(null);
-        }
-        if (initializedRef.current) {
-          setLoading(false);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [fetchUserData]);
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
+  const signOut = useCallback(async () => {
+    localStorage.removeItem("token");
+    setUser(null);
+    setSession(null);
+    setRoles([]);
+    setProfile(null);
+  }, []);
 
   const isAdmin = roles.includes("admin");
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, roles, isAdmin, profile, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, roles, isAdmin, profile, signOut, refreshSession: loadSession }}>
       {children}
     </AuthContext.Provider>
   );

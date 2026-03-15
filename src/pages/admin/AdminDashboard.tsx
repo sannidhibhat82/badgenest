@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { admin as adminApi } from "@/lib/api";
 import AdminLayout from "@/layouts/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,33 +12,24 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 export default function AdminDashboard() {
   const { data: stats } = useQuery({
     queryKey: ["admin-dashboard-stats"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_admin_dashboard_stats");
-      if (error) throw error;
-      const d = data as any;
-      return {
-        totalBadges: d.total_badges ?? 0,
-        active: d.active_assertions ?? 0,
-        revoked: d.revoked_assertions ?? 0,
-        totalLearners: d.total_learners ?? 0,
-        chartData: (d.chart_data ?? []) as { month: string; count: number }[],
-        recent: (d.recent ?? []).map((r: any) => ({
-          id: r.id,
-          issued_at: r.issued_at,
-          revoked: r.revoked,
-          learnerName: r.learner_name,
-          badgeName: r.badge_name,
-        })),
-      };
-    },
+    queryFn: () => adminApi.dashboardStats(),
   });
 
   const cards = [
-    { title: "Total Badges", value: stats?.totalBadges ?? 0, icon: Award, gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
-    { title: "Active Assertions", value: stats?.active ?? 0, icon: ShieldCheck, gradient: "from-success/10 to-success/5", iconColor: "text-success" },
-    { title: "Revoked", value: stats?.revoked ?? 0, icon: ShieldX, gradient: "from-destructive/10 to-destructive/5", iconColor: "text-destructive" },
-    { title: "Learners", value: stats?.totalLearners ?? 0, icon: Users, gradient: "from-secondary/10 to-secondary/5", iconColor: "text-secondary" },
+    { title: "Total Badges", value: stats?.total_badges ?? 0, icon: Award, gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
+    { title: "Active Assertions", value: stats?.active_assertions ?? 0, icon: ShieldCheck, gradient: "from-success/10 to-success/5", iconColor: "text-success" },
+    { title: "Revoked", value: stats?.revoked_assertions ?? 0, icon: ShieldX, gradient: "from-destructive/10 to-destructive/5", iconColor: "text-destructive" },
+    { title: "Learners", value: stats?.total_learners ?? 0, icon: Users, gradient: "from-secondary/10 to-secondary/5", iconColor: "text-secondary" },
   ];
+
+  const chartData = stats?.chart_data ?? [];
+  const recent = (stats?.recent ?? []).map((r: any) => ({
+    id: r.id,
+    issued_at: r.issued_at,
+    revoked: r.revoked,
+    learnerName: r.learner_name,
+    badgeName: r.badge_name,
+  }));
 
   return (
     <AdminLayout>
@@ -58,14 +49,13 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* KPI Cards */}
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
           {cards.map((stat) => (
             <Card key={stat.title} className="border-border/60 overflow-hidden transition-all duration-200 hover:shadow-card hover:-translate-y-0.5">
               <CardContent className={`p-5 bg-gradient-to-br ${stat.gradient}`}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                  <div className={`rounded-lg p-2 bg-card/80 shadow-sm`}>
+                  <div className="rounded-lg p-2 bg-card/80 shadow-sm">
                     <stat.icon className={`h-4 w-4 ${stat.iconColor}`} />
                   </div>
                 </div>
@@ -75,7 +65,6 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Chart */}
         <Card className="mt-6 border-border/60 overflow-hidden">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold">Issuance Trend</CardTitle>
@@ -84,7 +73,7 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats?.chartData ?? []} barCategoryGap="20%">
+                <BarChart data={chartData} barCategoryGap="20%">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -110,20 +99,19 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
         <Card className="mt-6 border-border/60">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            {!stats?.recent?.length ? (
+            {!recent?.length ? (
               <div className="text-center py-8">
                 <Award className="mx-auto h-10 w-10 text-muted-foreground/30 mb-2" />
                 <p className="text-muted-foreground text-sm">No recent activity.</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {stats.recent.map((a: any) => (
+                {recent.map((a: any) => (
                   <div key={a.id} className="flex items-center gap-3 rounded-xl bg-muted/30 p-3 transition-colors hover:bg-muted/50">
                     <Avatar className="h-9 w-9 shrink-0">
                       <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">

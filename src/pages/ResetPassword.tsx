@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,13 +26,14 @@ export default function ResetPassword() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      await auth.updatePassword(password);
       toast({ title: "Password updated!", description: "You can now sign in with your new password." });
       navigate("/dashboard");
+    } catch (err: any) {
+      toast({ title: "Error", description: err?.message ?? "Update failed", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 

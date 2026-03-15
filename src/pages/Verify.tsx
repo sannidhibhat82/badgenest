@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { verify as verifyApi } from "@/lib/api";
 import { Helmet } from "react-helmet-async";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,9 @@ import { CheckCircle, XCircle, AlertTriangle, Copy, ExternalLink, Calendar, User
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import badgenestLogo from "@/assets/badgenest-logo.png";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 function getStatus(assertion: any) {
   if (assertion.revoked) return { label: "Revoked", icon: XCircle, variant: "destructive" as const, color: "text-destructive" };
@@ -18,7 +20,6 @@ function getStatus(assertion: any) {
   return { label: "Valid", icon: CheckCircle, variant: "default" as const, color: "text-green-600" };
 }
 
-// Deduplicate badge views using localStorage (1 view per assertion per hour)
 function shouldTrackView(assertionId: string): boolean {
   const key = `badge_view_${assertionId}`;
   const lastView = localStorage.getItem(key);
@@ -35,57 +36,21 @@ export default function Verify() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["verify", assertionId],
     queryFn: async () => {
-      const { data: assertion, error } = await supabase
-        .from("assertions")
-        .select("*")
-        .eq("id", assertionId!)
-        .single();
-      if (error) throw error;
-
-      const snapshot = assertion.snapshot_json as any;
-      let badge = snapshot?.badge ?? null;
-      let issuer = snapshot?.issuer ?? null;
-      let recipient = snapshot?.recipient ?? null;
-
-      // Parallelize all fallback fetches + view count
-      const needBadge = !badge;
-      const needRecipient = !recipient;
-
-      const [badgeRes, recipientRes, countRes] = await Promise.all([
-        needBadge
-          ? supabase.from("badge_classes").select("*, issuers(*)").eq("id", assertion.badge_class_id).single()
-          : Promise.resolve(null),
-        needRecipient
-          ? supabase.from("profiles").select("full_name, avatar_url").eq("user_id", assertion.recipient_id).single()
-          : Promise.resolve(null),
-        supabase.from("badge_views").select("*", { count: "exact", head: true }).eq("assertion_id", assertionId!),
-      ]);
-
-      if (needBadge && badgeRes?.data) {
-        badge = badgeRes.data;
-        issuer = (badgeRes.data as any).issuers ?? null;
-      }
-      if (!issuer && badge?.issuer_id) {
-        const { data: i } = await supabase.from("issuers").select("*").eq("id", badge.issuer_id).single();
-        issuer = i;
-      }
-      if (needRecipient && recipientRes?.data) {
-        recipient = { full_name: (recipientRes.data as any).full_name };
-      }
-
-      // Track view (deduplicated)
+      const res = await verifyApi.assertion(assertionId!);
       if (shouldTrackView(assertionId!)) {
-        supabase.from("badge_views").insert({ assertion_id: assertionId! }).then(() => {});
+        verifyApi.recordView(assertionId!).catch(() => {});
       }
-
+      const badge = res.badge_class;
+      const issuer = res.issuer;
+      const recipient = res.recipient;
       return {
-        assertion,
+        assertion: res.assertion,
         badge,
         issuer,
         recipient,
-        viewCount: (countRes.count ?? 0),
-        hasSig: !!assertion.signature,
-        hasSnapshot: !!snapshot,
+        viewCount: res.view_count ?? 0,
+        hasSig: !!res.assertion?.signature,
+        hasSnapshot: !!res.assertion?.snapshot_json,
       };
     },
     enabled: !!assertionId,
@@ -139,14 +104,13 @@ export default function Verify() {
       revoked: assertion.revoked,
       revocationReason: assertion.revocation_reason ?? undefined,
       evidence: assertion.evidence_url ? [{ id: assertion.evidence_url }] : undefined,
-      verification: {
-        type: "signed",
-        signedAt: (assertion.snapshot_json as any)?.signed_at ?? undefined,
-      },
+      verification: { type: "signed" },
     };
   }
 
   const jsonLd = buildJsonLd();
+  const badgeImageUrl = badge?.image_url?.startsWith("http") ? badge.image_url : badge?.image_url ? `${API_BASE}${badge.image_url}` : null;
+  const issuerLogoUrl = issuer?.logo_url?.startsWith("http") ? issuer.logo_url : issuer?.logo_url ? `${API_BASE}${issuer.logo_url}` : null;
 
   return (
     <>
@@ -157,7 +121,6 @@ export default function Verify() {
       </Helmet>
 
       <div className="min-h-screen bg-background">
-        {/* Header */}
         <header className="border-b bg-card">
           <div className="container mx-auto flex items-center gap-3 px-4 py-4">
             <img src={badgenestLogo} alt="BadgeNest" className="h-8" />
@@ -166,7 +129,6 @@ export default function Verify() {
         </header>
 
         <main className="container mx-auto max-w-2xl px-4 py-10 space-y-6">
-          {/* Status Banner */}
           <Card className={`border-2 ${status.label === "Valid" ? "border-green-500/40" : status.label === "Revoked" ? "border-destructive/40" : "border-yellow-500/40"}`}>
             <CardContent className="py-6 space-y-3">
               <div className="flex items-center gap-4">
@@ -176,32 +138,19 @@ export default function Verify() {
                   {assertion.revocation_reason && <p className="text-sm text-muted-foreground">Reason: {assertion.revocation_reason}</p>}
                 </div>
               </div>
-              {/* Signature status */}
               <div className="flex items-center gap-2 pl-14">
                 {hasSig ? (
-                  <>
-                    <ShieldCheck className="h-4 w-4 text-green-600" />
-                    <span className="text-sm text-green-600 font-medium">Signature verified — credential integrity confirmed</span>
-                  </>
+                  <><ShieldCheck className="h-4 w-4 text-green-600" /><span className="text-sm text-green-600 font-medium">Signature verified</span></>
                 ) : (
-                  <>
-                    <ShieldX className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">No cryptographic signature</span>
-                  </>
+                  <><ShieldX className="h-4 w-4 text-muted-foreground" /><span className="text-sm text-muted-foreground">No cryptographic signature</span></>
                 )}
               </div>
-              {hasSnapshot && (
-                <p className="text-xs text-muted-foreground pl-14">
-                  Credential data frozen at issuance — immune to post-issuance edits
-                </p>
-              )}
             </CardContent>
           </Card>
 
-          {/* Badge Info */}
           <Card>
             <CardHeader className="flex flex-row items-start gap-4">
-              {badge?.image_url && <img src={badge.image_url} alt={badge.name} className="h-20 w-20 rounded-lg object-contain border" />}
+              {badgeImageUrl && <img src={badgeImageUrl} alt={badge?.name} className="h-20 w-20 rounded-lg object-contain border" />}
               <div className="space-y-1">
                 <CardTitle className="text-xl">{badge?.name}</CardTitle>
                 <Badge variant={status.variant}>{status.label}</Badge>
@@ -226,7 +175,6 @@ export default function Verify() {
             </CardContent>
           </Card>
 
-          {/* Recipient & Dates */}
           <div className="grid gap-4 sm:grid-cols-2">
             <Card>
               <CardContent className="flex items-center gap-3 py-4">
@@ -249,11 +197,10 @@ export default function Verify() {
             </Card>
           </div>
 
-          {/* Issuer */}
           {issuer && (
             <Card>
               <CardContent className="flex items-center gap-4 py-4">
-                {issuer.logo_url ? <img src={issuer.logo_url} alt={issuer.name} className="h-10 w-10 rounded object-contain" /> : <Building2 className="h-10 w-10 text-muted-foreground" />}
+                {issuerLogoUrl ? <img src={issuerLogoUrl} alt={issuer.name} className="h-10 w-10 rounded object-contain" /> : <Building2 className="h-10 w-10 text-muted-foreground" />}
                 <div>
                   <p className="text-xs text-muted-foreground">Issued by</p>
                   <p className="font-medium">{issuer.name}</p>
@@ -263,7 +210,6 @@ export default function Verify() {
             </Card>
           )}
 
-          {/* Raw JSON Metadata */}
           <Card>
             <Collapsible open={jsonOpen} onOpenChange={setJsonOpen}>
               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-accent/50 rounded-t-lg transition-colors">
@@ -275,9 +221,7 @@ export default function Verify() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="px-4 pb-4 space-y-3">
-                  <pre className="bg-muted rounded-md p-4 text-xs overflow-auto max-h-80 font-mono">
-                    {JSON.stringify(jsonLd, null, 2)}
-                  </pre>
+                  <pre className="bg-muted rounded-md p-4 text-xs overflow-auto max-h-80 font-mono">{JSON.stringify(jsonLd, null, 2)}</pre>
                   <Button variant="outline" size="sm" onClick={downloadJson} className="gap-2">
                     <Download className="h-4 w-4" /> Download Badge JSON
                   </Button>
@@ -286,7 +230,6 @@ export default function Verify() {
             </Collapsible>
           </Card>
 
-          {/* View count + Share */}
           <div className="flex flex-col items-center gap-3">
             <p className="text-sm text-muted-foreground">
               This badge has been verified <span className="font-semibold text-foreground">{viewCount}</span> time{viewCount !== 1 ? "s" : ""}

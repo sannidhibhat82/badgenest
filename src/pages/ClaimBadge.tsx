@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { invites as invitesApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,51 +16,12 @@ export default function ClaimBadge() {
 
   const { data: invite, isLoading, error } = useQuery({
     queryKey: ["badge-invite", token],
-    queryFn: async () => {
-      // Use security definer RPC to look up invite by token (works for anon users)
-      const { data, error } = await supabase
-        .rpc("get_invite_by_token", { _token: token! });
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Invite not found");
-      const row = data[0];
-      return {
-        id: row.id,
-        badge_class_id: row.badge_class_id,
-        status: row.status,
-        email: row.masked_email,
-        evidence_url: row.evidence_url,
-        badge_classes: {
-          name: row.badge_name,
-          description: row.badge_description,
-          image_url: row.badge_image_url,
-        },
-        issuer: {
-          name: row.issuer_name,
-          logo_url: row.issuer_logo_url,
-        },
-      };
-    },
+    queryFn: () => invitesApi.getByToken(token!),
     enabled: !!token,
   });
 
   const claimMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("You must be signed in to claim a badge");
-      if (!invite) throw new Error("Invalid invite");
-
-      const { error: assertErr } = await supabase.from("assertions").insert({
-        recipient_id: user.id,
-        badge_class_id: invite.badge_class_id,
-        evidence_url: invite.evidence_url || null,
-      });
-      if (assertErr) throw assertErr;
-
-      const { error: updateErr } = await supabase
-        .from("badge_invites")
-        .update({ status: "claimed", claimed_by: user.id, claimed_at: new Date().toISOString() })
-        .eq("id", invite.id);
-      if (updateErr) throw updateErr;
-    },
+    mutationFn: () => invitesApi.claim(invite!.id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["badge-invite", token] });
       toast({ title: "Badge claimed!", description: "The badge has been added to your portfolio." });
@@ -93,14 +54,13 @@ export default function ClaimBadge() {
     </div>
   );
 
-  const badge = invite.badge_classes as any;
-  const issuer = (invite as any).issuer;
+  const badge = invite.badge_classes;
+  const issuer = invite.issuer;
   const isClaimed = invite.status === "claimed";
 
   return (
     <div className="min-h-screen bg-background gradient-mesh flex items-center justify-center px-4 py-12">
       <Card className="max-w-md w-full border-border/60 shadow-elevated animate-scale-in overflow-hidden">
-        {/* Decorative top bar */}
         <div className="h-1.5 bg-gradient-to-r from-primary via-secondary to-primary" />
 
         <CardHeader className="text-center pt-8 pb-4">
@@ -112,14 +72,11 @@ export default function ClaimBadge() {
             {isClaimed ? "Badge Already Claimed" : "You've Been Invited!"}
           </CardTitle>
           <CardDescription className="mt-1">
-            {isClaimed
-              ? "This badge invite has already been claimed."
-              : `Claim the "${badge?.name}" badge below.`}
+            {isClaimed ? "This badge invite has already been claimed." : `Claim the "${badge?.name}" badge below.`}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6 pb-8">
-          {/* Badge preview */}
           <div className="flex items-center gap-4 rounded-xl border border-border/60 bg-muted/30 p-4">
             {badge?.image_url ? (
               <img src={badge.image_url} alt={badge.name} className="h-16 w-16 rounded-xl object-contain border border-border/60 bg-card p-1" />
@@ -156,9 +113,7 @@ export default function ClaimBadge() {
             </div>
           ) : (
             <Button onClick={() => claimMutation.mutate()} disabled={claimMutation.isPending} className="w-full h-12 text-sm font-semibold" size="lg">
-              {claimMutation.isPending ? "Claiming…" : (
-                <><Sparkles className="mr-2 h-4 w-4" />Claim Badge</>
-              )}
+              {claimMutation.isPending ? "Claiming…" : <><Sparkles className="mr-2 h-4 w-4" />Claim Badge</>}
             </Button>
           )}
         </CardContent>

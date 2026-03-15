@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,31 +21,24 @@ export default function Signup() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Signup failed", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Account created!", description: "Check your email to confirm, or sign in if auto-confirmed." });
+    try {
+      const { token } = await auth.signup(email, password, fullName || undefined);
+      localStorage.setItem("token", token);
+      toast({ title: "Account created!", description: "You can now sign in." });
       navigate(redirect || "/login");
+    } catch (err: any) {
+      toast({ title: "Signup failed", description: err?.message ?? "Something went wrong", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Password strength
   const strength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
   const strengthColors = ["bg-muted", "bg-destructive", "bg-warning", "bg-success"];
   const strengthLabels = ["", "Weak", "Fair", "Strong"];
 
   return (
     <div className="flex min-h-screen">
-      {/* Left decorative panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-primary opacity-90" />
         <div className="absolute top-1/3 -right-20 w-96 h-96 rounded-full bg-primary-foreground/5 blur-3xl" />
@@ -68,7 +61,6 @@ export default function Signup() {
         </div>
       </div>
 
-      {/* Right form panel */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-background">
         <div className="w-full max-w-sm animate-slide-up">
           <div className="mb-8 lg:hidden">
@@ -83,7 +75,7 @@ export default function Signup() {
           <form onSubmit={handleSignup} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-sm font-medium">Full Name</Label>
-              <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="Jane Doe" className="h-11" />
+              <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" className="h-11" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">Email</Label>

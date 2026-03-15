@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,15 +16,9 @@ export default function ForgotPassword() {
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    toast({ title: "Local setup", description: "Password reset is not configured. Contact your administrator to reset your password." });
     setLoading(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setSent(true);
-    }
+    setSent(true);
   };
 
   return (
@@ -40,9 +33,9 @@ export default function ForgotPassword() {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <Mail className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
+            <h1 className="text-2xl font-bold text-foreground">Check with your admin</h1>
             <p className="text-muted-foreground">
-              We sent a password reset link to <strong>{email}</strong>. Click the link in the email to set a new password.
+              This instance runs locally. Contact your administrator to reset your password.
             </p>
             <Link to="/login" className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
               <ArrowLeft className="h-4 w-4" /> Back to sign in

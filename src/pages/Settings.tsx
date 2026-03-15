@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { users as usersApi, auth as authApi, uploadFile } from "@/lib/api";
 import LearnerLayout from "@/layouts/LearnerLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, Upload, User, Shield, LogOut, CheckCircle, KeyRound } from "lucide-react";
 
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+
 function ChangePasswordCard() {
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
@@ -20,9 +22,16 @@ function ChangePasswordCard() {
     if (newPw !== confirmPw) { toast.error("Passwords don't match"); return; }
     if (newPw.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     setSaving(true);
-    const { error } = await supabase.auth.updateUser({ password: newPw });
-    setSaving(false);
-    if (error) { toast.error(error.message); } else { toast.success("Password updated!"); setNewPw(""); setConfirmPw(""); }
+    try {
+      await authApi.updatePassword(newPw);
+      toast.success("Password updated!");
+      setNewPw("");
+      setConfirmPw("");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Update failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -60,24 +69,21 @@ export default function SettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? "");
   const [saved, setSaved] = useState(false);
 
-  const initials = fullName
-    ? fullName.split(" ").map((n) => n[0]).join("").toUpperCase()
-    : "U";
+  const initials = fullName ? fullName.split(" ").map((n) => n[0]).join("").toUpperCase() : "U";
+  const displayAvatarUrl = avatarUrl?.startsWith("http") ? avatarUrl : avatarUrl ? `${API_BASE}${avatarUrl}` : "";
 
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ full_name: fullName, avatar_url: avatarUrl || null })
-      .eq("user_id", user.id);
-    setSaving(false);
-    if (error) {
-      toast.error("Failed to update profile");
-    } else {
+    try {
+      await usersApi.updateMe({ full_name: fullName, avatar_url: avatarUrl || undefined });
       setSaved(true);
       toast.success("Profile updated!");
       setTimeout(() => setSaved(false), 2000);
+    } catch {
+      toast.error("Failed to update profile");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -85,18 +91,15 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/avatar.${ext}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (error) {
+    try {
+      const { publicUrl } = await uploadFile("avatars", file);
+      setAvatarUrl(publicUrl);
+      toast.success("Avatar uploaded! Click Save to apply.");
+    } catch {
       toast.error("Upload failed");
+    } finally {
       setUploading(false);
-      return;
     }
-    const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-    setAvatarUrl(data.publicUrl);
-    setUploading(false);
-    toast.success("Avatar uploaded! Click Save to apply.");
   };
 
   return (
@@ -126,50 +129,26 @@ export default function SettingsPage() {
                 <CardDescription>Update your name and avatar</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Avatar */}
                 <div className="flex items-center gap-5">
                   <Avatar className="h-20 w-20 ring-2 ring-border shadow-sm">
-                    <AvatarImage src={avatarUrl || undefined} />
-                    <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">
-                      {initials}
-                    </AvatarFallback>
+                    <AvatarImage src={displayAvatarUrl || undefined} />
+                    <AvatarFallback className="text-lg font-semibold bg-primary/10 text-primary">{initials}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <Label
-                      htmlFor="avatar-upload"
-                      className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border/60 bg-card px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 hover:shadow-sm"
-                    >
-                      {uploading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Upload className="h-4 w-4" />
-                      )}
+                    <Label htmlFor="avatar-upload" className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border/60 bg-card px-4 py-2.5 text-sm font-medium transition-all hover:bg-muted/50 hover:shadow-sm">
+                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                       Upload Photo
                     </Label>
-                    <input
-                      id="avatar-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleAvatarUpload}
-                    />
+                    <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                     <p className="mt-1.5 text-xs text-muted-foreground">JPG, PNG. Max 2MB.</p>
                   </div>
                 </div>
 
-                {/* Name */}
                 <div className="space-y-2">
                   <Label htmlFor="full-name" className="text-sm font-medium">Full Name</Label>
-                  <Input
-                    id="full-name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your name"
-                    className="h-11"
-                  />
+                  <Input id="full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your name" className="h-11" />
                 </div>
 
-                {/* Email (read-only) */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Email</Label>
                   <Input value={user?.email ?? ""} disabled className="h-11 bg-muted/30" />
@@ -177,11 +156,7 @@ export default function SettingsPage() {
                 </div>
 
                 <Button onClick={handleSave} disabled={saving} className="w-full h-11">
-                  {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : saved ? (
-                    <CheckCircle className="mr-2 h-4 w-4 text-success" />
-                  ) : null}
+                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : saved ? <CheckCircle className="mr-2 h-4 w-4 text-success" /> : null}
                   {saved ? "Saved!" : "Save Changes"}
                 </Button>
               </CardContent>

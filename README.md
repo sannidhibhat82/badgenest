@@ -1,73 +1,136 @@
-# Welcome to your Lovable project
+# BadgeNest
 
-## Project info
+A local-first digital badge platform: admins create and issue badges, learners view and share them, and anyone can verify badges via public URLs.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Tech Stack
 
-## How can I edit this code?
+- **Frontend**: React 18, Vite, Tailwind CSS, shadcn/ui
+- **Backend**: Next.js API routes (Node.js)
+- **Database**: Microsoft SQL Server (MSSQL)
+- **Auth**: JWT (email/password, no cloud auth)
 
-There are several ways of editing your application.
+## Prerequisites
 
-**Use Lovable**
+- Node.js 18+
+- Microsoft SQL Server (local or remote instance)
+- npm or yarn
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Setup
 
-Changes made via Lovable will be committed automatically to this repo.
+### 1. Install dependencies
 
-**Use your preferred IDE**
+From the project root (badgenest folder):
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+npm install
+cd backend && npm install && cd ..
 ```
 
-**Edit a file directly in GitHub**
+### 2. Configure environment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+**Frontend** (optional; defaults work for local dev):
 
-**Use GitHub Codespaces**
+- Copy `.env.example` to `.env` if you need to change the API URL.
+- Default: `VITE_API_URL=http://localhost:3001`
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+**Backend**:
 
-## What technologies are used for this project?
+- Copy `backend/.env.example` to `backend/.env`.
+- Set your SQL Server connection and JWT secret:
 
-This project is built with:
+```env
+DB_SERVER=localhost
+DB_PORT=1433
+DB_USER=sa
+DB_PASSWORD=yourpassword
+DB_DATABASE=badgenest
+JWT_SECRET=your-random-secret-at-least-32-chars
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 3. Local database (MSSQL)
 
-## How can I deploy this project?
+Install **Microsoft SQL Server** locally (e.g. [SQL Server Express](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) on Windows, or SQL Server for Linux/macOS). Ensure the server is running and reachable at `DB_SERVER` / `DB_PORT` (default `localhost:1433`).
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Then from the `badgenest` folder:
 
-## Can I connect a custom domain to my Lovable project?
+```bash
+cd backend
+cp .env.example .env   # edit .env with your DB password
+npm run db:setup       # creates database and runs schema
+```
 
-Yes, you can!
+`db:setup` creates the `badgenest` database if it doesn’t exist and applies `database/schema.sql`. Alternatively, create the database yourself and run `backend/database/schema.sql` in sqlcmd or SSMS.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### 4. Run the project
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**Option A – Frontend and backend together (recommended for local dev):**
+
+```bash
+npm run dev:all
+```
+
+- Frontend: http://localhost:8080  
+- Backend API: http://localhost:3001  
+
+**Option B – Run separately:**
+
+- Terminal 1 (frontend): `npm run dev`
+- Terminal 2 (backend): `npm run dev:backend`
+
+### 5. First admin user
+
+1. Sign up a user via the app (http://localhost:8080/signup).
+2. Promote them to admin by inserting into the database:
+
+```sql
+INSERT INTO user_roles (user_id, role) VALUES ('<your-user-id>', 'admin');
+```
+
+(Get the user id from the `users` table after signup.)
+
+## Project structure
+
+```
+badgenest/
+├── src/                 # React frontend (Vite)
+├── public/
+├── backend/             # Next.js API
+│   ├── pages/api/        # API routes (auth, data, admin, etc.)
+│   ├── database/         # DB connection + schema.sql
+│   └── lib/              # Auth helpers
+├── .env                  # Frontend env (VITE_API_URL)
+├── backend/.env          # Backend env (DB_*, JWT_SECRET)
+└── package.json
+```
+
+## API overview
+
+- `POST /api/auth/login` – Login (email/password)
+- `POST /api/auth/signup` – Sign up
+- `GET /api/auth/session` – Current user + profile + roles (Bearer token)
+- `PATCH /api/auth/update-password` – Change password
+- `GET /api/users/me`, `PATCH /api/users/me` – Profile
+- `GET /api/data/assertions` – My assertions (learner)
+- `GET/POST /api/data/issuers`, `PATCH/DELETE /api/data/issuers/[id]`
+- `GET/POST /api/data/badge-classes`, `PATCH/DELETE /api/data/badge-classes/[id]`
+- `GET /api/verify/[assertionId]` – Public verification
+- `GET /api/invites/[token]`, `POST /api/invites/claim`
+- `GET /api/notifications`, `PATCH /api/notifications`
+- Admin: `/api/admin/dashboard-stats`, `/api/admin/assertions`, `/api/admin/learners`, `/api/admin/audit-logs`, `/api/admin/webhooks`, `/api/admin/api-keys`
+- `POST /api/upload?bucket=avatars|badge-images|issuer-logos` – File upload (base64 in body)
+
+## Build
+
+```bash
+npm run build
+```
+
+Backend (optional standalone):
+
+```bash
+cd backend && npm run build && npm run start
+```
+
+## License
+
+Private / use as needed.

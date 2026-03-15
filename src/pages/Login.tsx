@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { auth } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,22 +17,25 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get("redirect");
   const { toast } = useToast();
+  const { refreshSession } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Login failed", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      const { token } = await auth.login(email, password);
+      localStorage.setItem("token", token);
+      await refreshSession();
       navigate(redirect || "/dashboard");
+    } catch (err: any) {
+      toast({ title: "Login failed", description: err?.message ?? "Invalid credentials", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex min-h-screen">
-      {/* Left decorative panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-primary opacity-90" />
         <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full bg-primary-foreground/5 blur-3xl" />
@@ -54,10 +58,8 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right form panel */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-background">
         <div className="w-full max-w-sm animate-slide-up">
-          {/* Mobile logo */}
           <div className="mb-8 lg:hidden">
             <img src={badgenestLogo} alt="BadgeNest" className="h-10 w-auto" />
           </div>
