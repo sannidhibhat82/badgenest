@@ -1,7 +1,11 @@
 import { NextApiRequest } from "next";
 import jwt from "jsonwebtoken";
+import { getEnv, isProd } from "./api/env";
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "change-me-in-production";
+const JWT_SECRET = getEnv("JWT_SECRET") ?? "change-me-in-production";
+if (isProd() && JWT_SECRET === "change-me-in-production") {
+  throw new Error("JWT_SECRET must be set in production");
+}
 
 export interface JwtPayload {
   sub: string;

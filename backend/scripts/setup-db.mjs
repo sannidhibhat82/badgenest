@@ -62,6 +62,23 @@ async function run() {
 }
 
 run().catch((err) => {
-  console.error("Setup failed:", err.message);
+  console.error("Setup failed:", err?.message || err);
+  if (err && typeof err === "object") {
+    // mssql errors often carry useful nested info
+    const details = {
+      code: err.code,
+      number: err.number,
+      state: err.state,
+      class: err.class,
+      serverName: err.serverName,
+      procName: err.procName,
+      lineNumber: err.lineNumber,
+      originalError: err.originalError?.message,
+      precedingErrors: Array.isArray(err.precedingErrors)
+        ? err.precedingErrors.map((e) => ({ message: e?.message, code: e?.code, number: e?.number }))
+        : undefined,
+    };
+    console.error("Error details:", JSON.stringify(details, null, 2));
+  }
   process.exit(1);
 });

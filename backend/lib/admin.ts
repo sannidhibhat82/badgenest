@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { getAuthFromRequest } from "./auth";
 import { getPool } from "../database/connection";
 import sql from "mssql";
+import { forbidden, unauthorized } from "./api/http";
 
 export async function requireAdmin(
   req: NextApiRequest,
@@ -9,7 +10,7 @@ export async function requireAdmin(
 ): Promise<{ userId: string } | null> {
   const payload = getAuthFromRequest(req);
   if (!payload) {
-    res.status(401).json({ error: "Unauthorized" });
+    unauthorized(res);
     return null;
   }
 
@@ -21,7 +22,7 @@ export async function requireAdmin(
     .query("SELECT 1 FROM user_roles WHERE user_id = @user_id AND role = @role");
 
   if (!result.recordset.length) {
-    res.status(403).json({ error: "Admin access required" });
+    forbidden(res, "Admin access required");
     return null;
   }
   return { userId: payload.sub };
@@ -33,7 +34,7 @@ export async function requireAuth(
 ): Promise<{ userId: string } | null> {
   const payload = getAuthFromRequest(req);
   if (!payload) {
-    res.status(401).json({ error: "Unauthorized" });
+    unauthorized(res);
     return null;
   }
   return { userId: payload.sub };

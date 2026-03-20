@@ -3,49 +3,46 @@ import bcrypt from "bcryptjs";
 import { getPool } from "../../../database/connection";
 import { signToken } from "../../../lib/auth";
 import sql from "mssql";
+import { z } from "zod";
+import { withErrorHandling, withMethods, ok, badRequest, unauthorized } from "../../../lib/api/http";
+import { parseJson } from "../../../lib/api/validate";
+import { withRateLimit } from "../../../lib/api/rateLimit";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+const BodySchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
 
-  const { email, password } = req.body ?? {};
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password required" });
-  }
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const body = parseJson(BodySchema, req.body ?? {}, res);
+  if (!body) return;
 
-  try {
-    const pool = await getPool();
-    const result = await pool
-      .request()
-      .input("email", sql.NVarChar(255), String(email).trim().toLowerCase())
-      .query(
-        "SELECT id, email, password_hash, full_name, avatar_url FROM users WHERE email = @email"
-      );
+  const emailNorm = body.email.trim().toLowerCase();
 
-    const user = result.recordset[0];
-    if (!user) {
-      return res.status(401).json({ error: "Invalid email or password" });
-    }
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input("email", sql.NVarChar(255), emailNorm)
+    .query("SELECT id, email, password_hash, full_name, avatar_url FROM users WHERE email = @email");
 
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
-      return res.status(401).json({ error: "Invalid email or password" });
-    }
+  const user = result.recordset[0] as any;
+  if (!user) return unauthorized(res, "Invalid email or password");
 
-    const token = signToken(user.id, user.email);
-    return res.status(200).json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        avatar_url: user.avatar_url,
-      },
-    });
-  } catch (err) {
-    console.error("Login error:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+  const valid = await bcrypt.compare(body.password, user.password_hash);
+  if (!valid) return unauthorized(res, "Invalid email or password");
+
+  const token = signToken(user.id, user.email);
+  return ok(res, {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      avatar_url: user.avatar_url,
+    },
+  });
 }
+
+export default withRateLimit({ windowMs: 60_000, max: 30, keyPrefix: "auth:login" })(
+  withErrorHandling(withMethods(["POST"], handler), { name: "auth.login" })
+);

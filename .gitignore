@@ -16,6 +16,9 @@ dist-ssr
 .env
 backend/.env
 
+# Next.js build output (backend)
+backend/.next/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

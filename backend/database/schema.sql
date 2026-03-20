@@ -11,6 +11,7 @@ CREATE TABLE users (
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
   updated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- User roles
 CREATE TABLE user_roles (
@@ -19,6 +20,7 @@ CREATE TABLE user_roles (
   role NVARCHAR(50) NOT NULL DEFAULT 'learner' CHECK (role IN ('admin', 'learner')),
   UNIQUE (user_id, role)
 );
+GO
 
 -- Issuers
 CREATE TABLE issuers (
@@ -31,6 +33,7 @@ CREATE TABLE issuers (
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
   updated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- Badge classes
 CREATE TABLE badge_classes (
@@ -44,6 +47,7 @@ CREATE TABLE badge_classes (
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
   updated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- Assertions (issued badges)
 CREATE TABLE assertions (
@@ -60,6 +64,7 @@ CREATE TABLE assertions (
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
   updated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- Tags
 CREATE TABLE tags (
@@ -68,6 +73,7 @@ CREATE TABLE tags (
   color NVARCHAR(50) NOT NULL DEFAULT '#6366f1',
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- Profile tags (user-tag junction)
 CREATE TABLE profile_tags (
@@ -77,6 +83,7 @@ CREATE TABLE profile_tags (
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
   UNIQUE (profile_user_id, tag_id)
 );
+GO
 
 -- API keys
 CREATE TABLE api_keys (
@@ -91,6 +98,7 @@ CREATE TABLE api_keys (
   revoked BIT NOT NULL DEFAULT 0,
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- Webhooks
 CREATE TABLE webhooks (
@@ -105,6 +113,7 @@ CREATE TABLE webhooks (
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
   updated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- Audit logs
 CREATE TABLE audit_logs (
@@ -116,6 +125,7 @@ CREATE TABLE audit_logs (
   details NVARCHAR(MAX),
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- Badge invites
 CREATE TABLE badge_invites (
@@ -125,11 +135,12 @@ CREATE TABLE badge_invites (
   invite_token NVARCHAR(255) NOT NULL,
   status NVARCHAR(50) NOT NULL DEFAULT 'pending',
   invited_by UNIQUEIDENTIFIER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  claimed_by UNIQUEIDENTIFIER REFERENCES users(id) ON DELETE SET NULL,
+  claimed_by UNIQUEIDENTIFIER REFERENCES users(id),
   claimed_at DATETIME2,
   evidence_url NVARCHAR(2048),
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- Badge categories
 CREATE TABLE badge_categories (
@@ -139,6 +150,7 @@ CREATE TABLE badge_categories (
   description NVARCHAR(MAX),
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- Badge class categories (junction)
 CREATE TABLE badge_class_categories (
@@ -147,6 +159,7 @@ CREATE TABLE badge_class_categories (
   category_id UNIQUEIDENTIFIER NOT NULL REFERENCES badge_categories(id) ON DELETE CASCADE,
   UNIQUE (badge_class_id, category_id)
 );
+GO
 
 -- Badge views
 CREATE TABLE badge_views (
@@ -155,6 +168,7 @@ CREATE TABLE badge_views (
   viewed_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
   viewer_hash NVARCHAR(255)
 );
+GO
 
 -- Notifications
 CREATE TABLE notifications (
@@ -165,6 +179,7 @@ CREATE TABLE notifications (
   [read] BIT NOT NULL DEFAULT 0,
   created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
 );
+GO
 
 -- Indexes for common lookups
 CREATE INDEX IX_assertions_recipient ON assertions(recipient_id);
@@ -175,3 +190,4 @@ CREATE INDEX IX_audit_logs_actor ON audit_logs(actor_id);
 CREATE INDEX IX_audit_logs_created ON audit_logs(created_at);
 CREATE INDEX IX_badge_invites_token ON badge_invites(invite_token);
 CREATE INDEX IX_notifications_user ON notifications(user_id);
+GO
