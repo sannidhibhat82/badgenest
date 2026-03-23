@@ -14,10 +14,11 @@ dist-ssr
 
 # Env and secrets
 .env
-backend/.env
+server/.env
 
-# Next.js build output (backend)
-backend/.next/
+# Builds
+server/dist/
+client/dist/
 
 # Editor directories and files
 .vscode/*
